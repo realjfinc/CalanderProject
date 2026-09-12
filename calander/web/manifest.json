@@ -1,11 +1,11 @@
 {
-    "name": "calander",
-    "short_name": "calander",
+    "name": "Calander",
+    "short_name": "Calander",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7F9FC",
+    "theme_color": "#285BE0",
+    "description": "Calander — a little more room for life.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
