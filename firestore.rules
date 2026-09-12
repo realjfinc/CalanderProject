@@ -1,0 +1,24 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // Events (read-only from the client for now — reminder scheduling
+      // watches this collection; nothing in this branch writes to it).
+      match /events/{eventId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Per-user metadata, including the FCM device token registered by
+      // the notification system.
+      match /meta/{metaId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Default deny for everything else.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
