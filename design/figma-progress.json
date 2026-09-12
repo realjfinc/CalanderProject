@@ -1,0 +1,588 @@
+{
+  "fileKey": "idC2E2OBI6HILF3meDksPS",
+  "fileUrl": "https://www.figma.com/design/idC2E2OBI6HILF3meDksPS/CalanderProject",
+  "status": "Blocked by Figma Starter MCP tool-call limit. Screen bodies and dark versions incomplete. Welcome body call succeeded but screenshot remained empty: inspect hierarchy before resuming.",
+  "foundation": {
+    "collections": [
+      "VariableCollectionId:4:3",
+      "VariableCollectionId:4:20"
+    ],
+    "vars": {
+      "Light": {
+        "background": "VariableID:4:4",
+        "surface": "VariableID:4:5",
+        "text": "VariableID:4:6",
+        "muted": "VariableID:4:7",
+        "border": "VariableID:4:8",
+        "accent": "VariableID:4:9",
+        "primary": "VariableID:4:10",
+        "onPrimary": "VariableID:4:11",
+        "tint": "VariableID:4:12",
+        "green": "VariableID:4:13",
+        "greenBg": "VariableID:4:14",
+        "purple": "VariableID:4:15",
+        "purpleBg": "VariableID:4:16",
+        "orange": "VariableID:4:17",
+        "orangeBg": "VariableID:4:18",
+        "danger": "VariableID:4:19"
+      },
+      "Dark": {
+        "background": "VariableID:4:21",
+        "surface": "VariableID:4:22",
+        "text": "VariableID:4:23",
+        "muted": "VariableID:4:24",
+        "border": "VariableID:4:25",
+        "accent": "VariableID:4:26",
+        "primary": "VariableID:4:27",
+        "onPrimary": "VariableID:4:28",
+        "tint": "VariableID:4:29",
+        "green": "VariableID:4:30",
+        "greenBg": "VariableID:4:31",
+        "purple": "VariableID:4:32",
+        "purpleBg": "VariableID:4:33",
+        "orange": "VariableID:4:34",
+        "orangeBg": "VariableID:4:35",
+        "danger": "VariableID:4:36"
+      }
+    },
+    "spacing": {
+      "s4": "VariableID:4:38",
+      "s8": "VariableID:4:39",
+      "s12": "VariableID:4:40",
+      "s16": "VariableID:4:41",
+      "s24": "VariableID:4:42",
+      "s32": "VariableID:4:43",
+      "r12": "VariableID:4:44",
+      "r16": "VariableID:4:45",
+      "r24": "VariableID:4:46"
+    },
+    "styles": {
+      "Display": "S:3f9d71c574105d5add6b3716531e09a6e9d04d83,",
+      "Title": "S:2972785f1d5f4adb4a761e2e1423664e41fa7422,",
+      "Heading": "S:8c8f0c243cd99a86216450c4384212ffe78b9937,",
+      "Body": "S:2f260d7d9806ad87cf48b42db33ba08041d475be,",
+      "Label": "S:c2e7531279980af4444cd32b24c17785173a2e53,",
+      "Small": "S:fec8d55a0419b4e12fea8c6d3eb2529872530617,",
+      "Caption": "S:38f1ac44d71837e43c796b65c9259d96c1a24e8f,"
+    },
+    "mutatedNodeIds": [
+      "0:1"
+    ]
+  },
+  "components": {
+    "buttons": {
+      "createdNodeIds": [
+        "5:2",
+        "5:3",
+        "5:4",
+        "5:5",
+        "5:6"
+      ],
+      "components": {
+        "Primary": {
+          "id": "5:3",
+          "label": "Label#5:0"
+        },
+        "Secondary": {
+          "id": "5:5",
+          "label": "Label#5:1"
+        }
+      },
+      "root": "5:2"
+    },
+    "field": {
+      "createdNodeIds": [
+        "5:7",
+        "5:8",
+        "5:9",
+        "5:10",
+        "5:11"
+      ],
+      "component": "5:8",
+      "properties": {
+        "Label#5:2": {
+          "type": "TEXT",
+          "defaultValue": "Email"
+        },
+        "Value#5:3": {
+          "type": "TEXT",
+          "defaultValue": "you@example.com"
+        }
+      },
+      "root": "5:7"
+    },
+    "event": {
+      "createdNodeIds": [
+        "5:12",
+        "5:13",
+        "5:14",
+        "5:15"
+      ],
+      "component": "5:12",
+      "properties": {
+        "Title#5:4": {
+          "type": "TEXT",
+          "defaultValue": "Design review"
+        },
+        "Detail#5:5": {
+          "type": "TEXT",
+          "defaultValue": "09:00–10:00  ·  Studio 2"
+        },
+        "Meta#5:6": {
+          "type": "TEXT",
+          "defaultValue": "WORK  ·  FIXED"
+        }
+      }
+    },
+    "nav": {
+      "createdNodeIds": [
+        "5:16",
+        "5:17",
+        "5:18",
+        "5:19",
+        "5:20",
+        "5:21",
+        "5:22",
+        "5:23",
+        "5:24",
+        "5:25",
+        "5:26",
+        "5:27",
+        "5:28",
+        "5:29",
+        "5:30",
+        "5:31",
+        "5:32",
+        "5:33",
+        "5:34",
+        "5:35"
+      ],
+      "component": "5:16"
+    },
+    "date": "8:154"
+  },
+  "roots": {
+    "welcome": "6:2",
+    "signup": "6:3",
+    "login": "6:4",
+    "forgot": "6:5",
+    "verify": "6:6",
+    "newpass": "6:7",
+    "onboarding": "6:8",
+    "month": "6:9",
+    "week": "6:10",
+    "day": "6:11",
+    "empty": "6:12",
+    "search": "6:13",
+    "add": "6:14",
+    "options": "6:15",
+    "repeat": "6:16",
+    "reminder": "6:17",
+    "importance": "6:18",
+    "guests": "6:19",
+    "detail": "6:20",
+    "edit": "6:21",
+    "delete": "6:22",
+    "import": "6:23",
+    "link": "6:24",
+    "portal": "6:25",
+    "portalweb": "6:26",
+    "review": "6:27",
+    "conflict": "6:28",
+    "importdone": "6:29",
+    "importerror": "6:30",
+    "sports": "6:31",
+    "follow": "6:32",
+    "match": "6:33",
+    "friends": "6:34",
+    "addfriend": "6:35",
+    "requests": "6:36",
+    "tags": "6:37",
+    "newtag": "6:38",
+    "notifications": "6:39",
+    "settings": "6:40",
+    "appearance": "6:41",
+    "connections": "6:42",
+    "export": "6:43",
+    "account": "6:44",
+    "alerts": "6:45",
+    "widgets": "6:46",
+    "signout": "6:47"
+  },
+  "bodies": {
+    "welcome": "6:55",
+    "signup": "6:65",
+    "login": "6:75",
+    "forgot": "6:85",
+    "verify": "6:95",
+    "newpass": "6:105",
+    "onboarding": "6:115",
+    "month": "6:125",
+    "week": "6:153",
+    "day": "6:181",
+    "empty": "6:209",
+    "search": "6:237",
+    "add": "6:265",
+    "options": "6:275",
+    "repeat": "6:285",
+    "reminder": "6:295",
+    "importance": "6:305",
+    "guests": "6:315",
+    "detail": "6:325",
+    "edit": "6:335",
+    "delete": "6:345",
+    "import": "6:355",
+    "link": "6:365",
+    "portal": "6:375",
+    "portalweb": "6:385",
+    "review": "6:395",
+    "conflict": "6:405",
+    "importdone": "6:415",
+    "importerror": "6:425",
+    "sports": "6:435",
+    "follow": "6:463",
+    "match": "6:473",
+    "friends": "6:483",
+    "addfriend": "6:511",
+    "requests": "6:521",
+    "tags": "6:531",
+    "newtag": "6:541",
+    "notifications": "6:551",
+    "settings": "6:561",
+    "appearance": "6:589",
+    "connections": "6:599",
+    "export": "6:609",
+    "account": "6:619",
+    "alerts": "6:629",
+    "widgets": "6:639",
+    "signout": "6:649"
+  },
+  "screens": [
+    [
+      "welcome",
+      "Welcome",
+      "A little more room for life.",
+      null
+    ],
+    [
+      "signup",
+      "Create account",
+      "Make your days your own.",
+      null
+    ],
+    [
+      "login",
+      "Welcome back",
+      "Your day is waiting.",
+      null
+    ],
+    [
+      "forgot",
+      "Reset password",
+      "We’ll send you a reset link.",
+      null
+    ],
+    [
+      "verify",
+      "Check your inbox",
+      "One last step to get started.",
+      null
+    ],
+    [
+      "newpass",
+      "Choose a password",
+      "A fresh start for your account.",
+      null
+    ],
+    [
+      "onboarding",
+      "Bring your days together",
+      "Connect a calendar or start fresh.",
+      null
+    ],
+    [
+      "month",
+      "September 2026",
+      "A little structure. More possibility.",
+      "Calendar"
+    ],
+    [
+      "week",
+      "Your week",
+      "September 7–13, 2026",
+      "Calendar"
+    ],
+    [
+      "day",
+      "Friday, September 11",
+      "3 events · Time for what matters",
+      "Calendar"
+    ],
+    [
+      "empty",
+      "A fresh start",
+      "Your calendar is ready for you.",
+      "Calendar"
+    ],
+    [
+      "search",
+      "Search calendar",
+      "Find your next moment.",
+      "Calendar"
+    ],
+    [
+      "add",
+      "New event",
+      "Start with the essentials.",
+      null
+    ],
+    [
+      "options",
+      "Event options",
+      "Make this event work for you.",
+      null
+    ],
+    [
+      "repeat",
+      "Repeat event",
+      "Choose how often it happens.",
+      null
+    ],
+    [
+      "reminder",
+      "Event reminder",
+      "A little heads-up goes a long way.",
+      null
+    ],
+    [
+      "importance",
+      "Event importance",
+      "Protect plans. Keep room to move.",
+      null
+    ],
+    [
+      "guests",
+      "Add guests",
+      "Invite people from your friends.",
+      null
+    ],
+    [
+      "detail",
+      "Design review",
+      "Work · Fixed event",
+      null
+    ],
+    [
+      "edit",
+      "Edit event",
+      "Update the details of your plan.",
+      null
+    ],
+    [
+      "delete",
+      "Delete event?",
+      "Choose which plans to remove.",
+      null
+    ],
+    [
+      "import",
+      "Import a schedule",
+      "Less typing. More living.",
+      null
+    ],
+    [
+      "link",
+      "Import from a link",
+      "Turn a schedule into calendar events.",
+      null
+    ],
+    [
+      "portal",
+      "Connect a portal",
+      "Your school or workplace schedule.",
+      null
+    ],
+    [
+      "portalweb",
+      "Sign in to your portal",
+      "Secure browser",
+      null
+    ],
+    [
+      "review",
+      "Review imported events",
+      "3 events found · Nothing added yet",
+      null
+    ],
+    [
+      "conflict",
+      "A little overlap",
+      "Keep your fixed plans protected.",
+      null
+    ],
+    [
+      "importdone",
+      "You’re all set",
+      "Your schedule is ready.",
+      null
+    ],
+    [
+      "importerror",
+      "Let’s try that again",
+      "We couldn’t read this schedule.",
+      null
+    ],
+    [
+      "sports",
+      "Your sports",
+      "Keep your teams in your day.",
+      "Sports"
+    ],
+    [
+      "follow",
+      "Find your teams",
+      "Choose what you want to follow.",
+      null
+    ],
+    [
+      "match",
+      "Match details",
+      "Sample fixture · Times are illustrative",
+      null
+    ],
+    [
+      "friends",
+      "Better with friends",
+      "Plan a little time together.",
+      "Friends"
+    ],
+    [
+      "addfriend",
+      "Find a friend",
+      "Search by their unique username.",
+      null
+    ],
+    [
+      "requests",
+      "Friend requests",
+      "Choose who you connect with.",
+      null
+    ],
+    [
+      "tags",
+      "Your tags",
+      "A place for every kind of plan.",
+      null
+    ],
+    [
+      "newtag",
+      "Create a tag",
+      "Give your events a little color.",
+      null
+    ],
+    [
+      "notifications",
+      "Updates",
+      "Your schedule, kept in sync.",
+      null
+    ],
+    [
+      "settings",
+      "Settings",
+      "Make Calander feel like you.",
+      "Settings"
+    ],
+    [
+      "appearance",
+      "Appearance",
+      "The same calm, day or night.",
+      null
+    ],
+    [
+      "connections",
+      "Connected calendars",
+      "All your plans in one place.",
+      null
+    ],
+    [
+      "export",
+      "Export calendar",
+      "Take your schedule with you.",
+      null
+    ],
+    [
+      "account",
+      "Your account",
+      "A few things about you.",
+      null
+    ],
+    [
+      "alerts",
+      "Notification settings",
+      "Stay informed on your terms.",
+      null
+    ],
+    [
+      "widgets",
+      "At a glance",
+      "Your day, right where you need it.",
+      null
+    ],
+    [
+      "signout",
+      "Sign out?",
+      "Your saved plans will be here.",
+      null
+    ]
+  ],
+  "base": "\nawait Promise.all(['Regular','Medium','Semi Bold','Bold'].map(style=>figma.loadFontAsync({family:'Inter',style})));\nconst F={\"collections\":[\"VariableCollectionId:4:3\",\"VariableCollectionId:4:20\"],\"vars\":{\"Light\":{\"background\":\"VariableID:4:4\",\"surface\":\"VariableID:4:5\",\"text\":\"VariableID:4:6\",\"muted\":\"VariableID:4:7\",\"border\":\"VariableID:4:8\",\"accent\":\"VariableID:4:9\",\"primary\":\"VariableID:4:10\",\"onPrimary\":\"VariableID:4:11\",\"tint\":\"VariableID:4:12\",\"green\":\"VariableID:4:13\",\"greenBg\":\"VariableID:4:14\",\"purple\":\"VariableID:4:15\",\"purpleBg\":\"VariableID:4:16\",\"orange\":\"VariableID:4:17\",\"orangeBg\":\"VariableID:4:18\",\"danger\":\"VariableID:4:19\"},\"Dark\":{\"background\":\"VariableID:4:21\",\"surface\":\"VariableID:4:22\",\"text\":\"VariableID:4:23\",\"muted\":\"VariableID:4:24\",\"border\":\"VariableID:4:25\",\"accent\":\"VariableID:4:26\",\"primary\":\"VariableID:4:27\",\"onPrimary\":\"VariableID:4:28\",\"tint\":\"VariableID:4:29\",\"green\":\"VariableID:4:30\",\"greenBg\":\"VariableID:4:31\",\"purple\":\"VariableID:4:32\",\"purpleBg\":\"VariableID:4:33\",\"orange\":\"VariableID:4:34\",\"orangeBg\":\"VariableID:4:35\",\"danger\":\"VariableID:4:36\"}},\"spacing\":{\"s4\":\"VariableID:4:38\",\"s8\":\"VariableID:4:39\",\"s12\":\"VariableID:4:40\",\"s16\":\"VariableID:4:41\",\"s24\":\"VariableID:4:42\",\"s32\":\"VariableID:4:43\",\"r12\":\"VariableID:4:44\",\"r16\":\"VariableID:4:45\",\"r24\":\"VariableID:4:46\"},\"styles\":{\"Display\":\"S:3f9d71c574105d5add6b3716531e09a6e9d04d83,\",\"Title\":\"S:2972785f1d5f4adb4a761e2e1423664e41fa7422,\",\"Heading\":\"S:8c8f0c243cd99a86216450c4384212ffe78b9937,\",\"Body\":\"S:2f260d7d9806ad87cf48b42db33ba08041d475be,\",\"Label\":\"S:c2e7531279980af4444cd32b24c17785173a2e53,\",\"Small\":\"S:fec8d55a0419b4e12fea8c6d3eb2529872530617,\",\"Caption\":\"S:38f1ac44d71837e43c796b65c9259d96c1a24e8f,\"},\"mutatedNodeIds\":[\"0:1\"]};\nconst variables=await figma.variables.getLocalVariablesAsync(); const vm=Object.fromEntries(variables.map(v=>[v.id,v]));\nconst ids=[];const created=n=>(ids.push(n.id),n);\nfunction paint(key,theme='Light'){return figma.variables.setBoundVariableForPaint({type:'SOLID',color:{r:0,g:0,b:0}},'color',vm[F.vars[theme][key]]);}\nfunction fill(n,key){n.fills=key?[paint(key)]:[];}\nfunction round(n,r='r16'){for(const k of ['topLeftRadius','topRightRadius','bottomLeftRadius','bottomRightRadius'])n.setBoundVariable(k,vm[F.spacing[r]]);}\nfunction box(parent,name,w,dir='VERTICAL',gap=12,bg=null,pad=0){const n=created(figma.createAutoLayout(dir));n.name=name;parent.appendChild(n);n.resize(w,1);n.primaryAxisSizingMode=dir==='VERTICAL'?'AUTO':'FIXED';n.counterAxisSizingMode=dir==='VERTICAL'?'FIXED':'AUTO';n.itemSpacing=gap;if(F.spacing['s'+gap])n.setBoundVariable('itemSpacing',vm[F.spacing['s'+gap]]);fill(n,bg);if(pad){for(const k of ['paddingTop','paddingBottom','paddingLeft','paddingRight'])n.setBoundVariable(k,vm[F.spacing['s'+pad]]);}return n;}\nfunction txt(parent,str,style='Body',color='text',width){const n=created(figma.createText());n.name=str.slice(0,55);n.textStyleId=F.styles[style];n.characters=str;n.fills=[paint(color)];parent.appendChild(n);if(width){n.textAutoResize='HEIGHT';n.resize(width,n.height);n.layoutSizingHorizontal='FIXED';}return n;}\nfunction prop(comp,n,name){const k=comp.addComponentProperty(name,'TEXT',n.characters);n.componentPropertyReferences={characters:k};return k;}\n",
+  "ui": "\nawait Promise.all(['Regular','Medium','Semi Bold','Bold'].map(style=>figma.loadFontAsync({family:'Inter',style})));\nconst F={\"collections\":[\"VariableCollectionId:4:3\",\"VariableCollectionId:4:20\"],\"vars\":{\"Light\":{\"background\":\"VariableID:4:4\",\"surface\":\"VariableID:4:5\",\"text\":\"VariableID:4:6\",\"muted\":\"VariableID:4:7\",\"border\":\"VariableID:4:8\",\"accent\":\"VariableID:4:9\",\"primary\":\"VariableID:4:10\",\"onPrimary\":\"VariableID:4:11\",\"tint\":\"VariableID:4:12\",\"green\":\"VariableID:4:13\",\"greenBg\":\"VariableID:4:14\",\"purple\":\"VariableID:4:15\",\"purpleBg\":\"VariableID:4:16\",\"orange\":\"VariableID:4:17\",\"orangeBg\":\"VariableID:4:18\",\"danger\":\"VariableID:4:19\"},\"Dark\":{\"background\":\"VariableID:4:21\",\"surface\":\"VariableID:4:22\",\"text\":\"VariableID:4:23\",\"muted\":\"VariableID:4:24\",\"border\":\"VariableID:4:25\",\"accent\":\"VariableID:4:26\",\"primary\":\"VariableID:4:27\",\"onPrimary\":\"VariableID:4:28\",\"tint\":\"VariableID:4:29\",\"green\":\"VariableID:4:30\",\"greenBg\":\"VariableID:4:31\",\"purple\":\"VariableID:4:32\",\"purpleBg\":\"VariableID:4:33\",\"orange\":\"VariableID:4:34\",\"orangeBg\":\"VariableID:4:35\",\"danger\":\"VariableID:4:36\"}},\"spacing\":{\"s4\":\"VariableID:4:38\",\"s8\":\"VariableID:4:39\",\"s12\":\"VariableID:4:40\",\"s16\":\"VariableID:4:41\",\"s24\":\"VariableID:4:42\",\"s32\":\"VariableID:4:43\",\"r12\":\"VariableID:4:44\",\"r16\":\"VariableID:4:45\",\"r24\":\"VariableID:4:46\"},\"styles\":{\"Display\":\"S:3f9d71c574105d5add6b3716531e09a6e9d04d83,\",\"Title\":\"S:2972785f1d5f4adb4a761e2e1423664e41fa7422,\",\"Heading\":\"S:8c8f0c243cd99a86216450c4384212ffe78b9937,\",\"Body\":\"S:2f260d7d9806ad87cf48b42db33ba08041d475be,\",\"Label\":\"S:c2e7531279980af4444cd32b24c17785173a2e53,\",\"Small\":\"S:fec8d55a0419b4e12fea8c6d3eb2529872530617,\",\"Caption\":\"S:38f1ac44d71837e43c796b65c9259d96c1a24e8f,\"},\"mutatedNodeIds\":[\"0:1\"]};\nconst variables=await figma.variables.getLocalVariablesAsync(); const vm=Object.fromEntries(variables.map(v=>[v.id,v]));\nconst ids=[];const created=n=>(ids.push(n.id),n);\nfunction paint(key,theme='Light'){return figma.variables.setBoundVariableForPaint({type:'SOLID',color:{r:0,g:0,b:0}},'color',vm[F.vars[theme][key]]);}\nfunction fill(n,key){n.fills=key?[paint(key)]:[];}\nfunction round(n,r='r16'){for(const k of ['topLeftRadius','topRightRadius','bottomLeftRadius','bottomRightRadius'])n.setBoundVariable(k,vm[F.spacing[r]]);}\nfunction box(parent,name,w,dir='VERTICAL',gap=12,bg=null,pad=0){const n=created(figma.createAutoLayout(dir));n.name=name;parent.appendChild(n);n.resize(w,1);n.primaryAxisSizingMode=dir==='VERTICAL'?'AUTO':'FIXED';n.counterAxisSizingMode=dir==='VERTICAL'?'FIXED':'AUTO';n.itemSpacing=gap;if(F.spacing['s'+gap])n.setBoundVariable('itemSpacing',vm[F.spacing['s'+gap]]);fill(n,bg);if(pad){for(const k of ['paddingTop','paddingBottom','paddingLeft','paddingRight'])n.setBoundVariable(k,vm[F.spacing['s'+pad]]);}return n;}\nfunction txt(parent,str,style='Body',color='text',width){const n=created(figma.createText());n.name=str.slice(0,55);n.textStyleId=F.styles[style];n.characters=str;n.fills=[paint(color)];parent.appendChild(n);if(width){n.textAutoResize='HEIGHT';n.resize(width,n.height);n.layoutSizingHorizontal='FIXED';}return n;}\nfunction prop(comp,n,name){const k=comp.addComponentProperty(name,'TEXT',n.characters);n.componentPropertyReferences={characters:k};return k;}\n\nconst B={\"Primary\":{\"id\":\"5:3\",\"label\":\"Label#5:0\"},\"Secondary\":{\"id\":\"5:5\",\"label\":\"Label#5:1\"}};const fieldId='5:8';const eventId='5:12';const navId='5:16';\nconst cs=await Promise.all([figma.getNodeByIdAsync(B.Primary.id),figma.getNodeByIdAsync(B.Secondary.id),figma.getNodeByIdAsync(fieldId),figma.getNodeByIdAsync(eventId),figma.getNodeByIdAsync(navId)]);\nfunction instance(parent,c,values={}){const n=created(c.createInstance());parent.appendChild(n);const props={};for(const [k,v] of Object.entries(values)){const key=Object.keys(c.componentPropertyDefinitions).find(p=>p.split('#')[0]===k);if(key)props[key]=v;}n.setProperties(props);return n;}\nfunction button(p,label,secondary=false){const n=instance(p,cs[secondary?1:0],{Label:label});n.name='Action / '+label;return n;}\nfunction field(p,label,value){return instance(p,cs[2],{Label:label,Value:value});}\nfunction event(p,title,detail,meta='WORK · FIXED',tone='tint'){const n=instance(p,cs[3],{Title:title,Detail:detail,Meta:meta});fill(n,tone);return n;}\nfunction row(p,title,subtitle='',trailing='›',color='text'){const r=box(p,title,342,'HORIZONTAL',12,'surface',16);round(r,'r12');r.counterAxisAlignItems='CENTER';const t=box(r,'Labels',262,'VERTICAL',4);txt(t,title,'Label',color,262);if(subtitle)txt(t,subtitle,'Small','muted',262);txt(r,trailing,'Label','accent');return r;}\nfunction note(p,title,body,tone='tint'){const b=box(p,title,342,'VERTICAL',8,tone,16);round(b);txt(b,title,'Label','text',310);txt(b,body,'Small','muted',310);return b;}\nfunction chips(p,labels,active=0){const r=box(p,'Choices',342,'HORIZONTAL',8);labels.forEach((s,i)=>{const n=box(r,s,(342-(labels.length-1)*8)/labels.length,'HORIZONTAL',4,i===active?'primary':'surface',12);round(n,'r12');n.primaryAxisAlignItems='CENTER';txt(n,s,'Small',i===active?'onPrimary':'muted');});return r;}\nfunction heading(p,s){txt(p,s,'Label','text',342);}\nfunction spacer(p,h){const n=created(figma.createFrame());p.appendChild(n);n.name='Space';n.resize(1,h);n.fills=[];return n;}\n",
+  "content": {
+    "welcome": "spacer(p,10);const hero=box(p,'Your day preview',342,'VERTICAL',12,'tint',24);round(hero,'r24');txt(hero,'FRIDAY, SEPTEMBER 11','Caption','accent');txt(hero,'Space for\\nwhat matters.','Display','text',294);txt(hero,'09:00   Design review','Label','text',294);txt(hero,'12:30   Lunch with Maya','Body','muted',294);txt(hero,'18:00   A little time for you','Body','muted',294);txt(p,'Your calendars, friends and favorite teams.\\nOne simple place to plan your day.','Body','muted',342);button(p,'Get started');button(p,'I already have an account',true);",
+    "signup": "field(p,'Full name','Alex Morgan');field(p,'Username','alexmorgan');field(p,'Email','alex@example.com');field(p,'Password','Create a strong password');button(p,'Create account');txt(p,'Already have an account? Log in','Small','accent',342);",
+    "login": "spacer(p,8);field(p,'Email','alex@example.com');field(p,'Password','Enter your password');txt(p,'Forgot password?','Small','accent',342);button(p,'Log in');txt(p,'────────  or continue with  ────────','Small','muted',342);button(p,'Continue with Google',true);button(p,'Continue with Apple',true);txt(p,'New here? Create an account','Small','accent',342);",
+    "forgot": "spacer(p,40);note(p,'Forgotten happens.','Enter the email you used for Calander. We’ll help you get back to your plans.');field(p,'Email address','alex@example.com');button(p,'Send reset link');button(p,'Back to log in',true);",
+    "verify": "spacer(p,40);note(p,'You’ve got mail','We sent a verification link to alex@example.com. Open it to verify your account.');button(p,'I’ve verified my email');button(p,'Resend email',true);txt(p,'Wrong address? Change email','Small','accent',342);txt(p,'For password recovery, the email link opens the Choose a password screen.','Small','muted',342);",
+    "newpass": "spacer(p,24);field(p,'New password','Enter a new password');field(p,'Confirm password','Re-enter your new password');note(p,'Make it yours. Keep it private.','Use a unique password with at least 8 characters.');button(p,'Save password');",
+    "onboarding": "note(p,'Your day, all together','Connect the calendars you already use. You can add more whenever you like.');row(p,'Google Calendar','Work and personal calendars');row(p,'Microsoft Outlook','School and workplace accounts');row(p,'Apple iCloud','Connect your iCloud calendar');button(p,'Continue');button(p,'Start with an empty calendar',true);",
+    "empty": "spacer(p,40);note(p,'A blank page for a good day','Add your first event, import a schedule or connect an existing calendar.');button(p,'Create my first event');button(p,'Import a schedule',true);row(p,'Connect a calendar','Google, Outlook or iCloud');",
+    "search": "field(p,'Search','Design');chips(p,['All','Work','Personal'],0);heading(p,'2 results');event(p,'Design review','Fri, Sep 11 · 09:00–10:00');event(p,'Design workshop','Tue, Sep 15 · 14:00–15:30','SCHOOL · FIXED','purpleBg');txt(p,'Try an event name, location or tag.','Small','muted',342);",
+    "add": "field(p,'Event name','Design review');field(p,'Location','Studio 2');row(p,'Date','Friday, September 11, 2026');const times=box(p,'Time fields',342,'HORIZONTAL',12);for(const [a,b] of [['Starts','09:00'],['Ends','10:00']]){const q=box(times,a,165,'VERTICAL',8,'surface',16);round(q,'r12');txt(q,a,'Small','muted');txt(q,b,'Heading');}row(p,'Tag','Work');button(p,'Next: event options');",
+    "options": "row(p,'Repeat','Does not repeat');row(p,'Reminder','15 minutes before');row(p,'Importance','Fixed · Keep this time protected');row(p,'Guests','Add friends to this event');field(p,'Notes','Bring the latest concepts.');button(p,'Create event');",
+    "repeat": "p.itemSpacing=8;for(const [i,s] of ['Does not repeat','Every day','Every week','Every 2 weeks','Every month','Every year'].entries())row(p,s,'',i===2?'✓':'○');note(p,'Repeats every Friday','Starting September 11, 2026.');button(p,'Save repeat');",
+    "reminder": "p.itemSpacing=8;for(const [i,s] of ['At event start','5 minutes before','10 minutes before','15 minutes before','30 minutes before','1 hour before','1 day before'].entries())row(p,s,'',i===3?'✓':'○');button(p,'Save reminder');",
+    "importance": "note(p,'Plans can have different priorities','Fixed events keep their time. Flexible events can move when you choose to resolve a clash.');row(p,'Fixed','Work, classes and appointments','✓');row(p,'Flexible','Plans with room to move','○');note(p,'You stay in control','Review changes before anything moves.');button(p,'Save importance');",
+    "guests": "field(p,'Search friends','Find by name or username');row(p,'Maya Chen','@mayachen','✓');row(p,'Sam Rivera','@samrivera','○');row(p,'Jordan Lee','@jordanlee','○');note(p,'Friends only','Add someone as a friend before inviting them.');button(p,'Add 1 guest');",
+    "detail": "note(p,'Friday, September 11','09:00–10:00 · America/Toronto');row(p,'Studio 2','Location');row(p,'Every week','Reminder: 15 minutes before');row(p,'Maya Chen','1 guest invited');note(p,'Notes','Bring the latest concepts.');button(p,'Edit event');button(p,'Delete event',true);",
+    "edit": "field(p,'Event name','Design review');field(p,'Location','Studio 2');row(p,'Date and time','Sep 11, 2026 · 09:00–10:00');row(p,'More options','Work · Fixed · Weekly · 1 guest');note(p,'Repeating event','Apply this change to this event or the series.');chips(p,['This event','Entire series'],0);button(p,'Save changes');",
+    "delete": "spacer(p,32);note(p,'Design review','This is a repeating event. Choose what to delete.');row(p,'Only this event','Friday, September 11','✓');row(p,'This and future events','Starting September 11','○');row(p,'The entire series','All Design review events','○');button(p,'Delete selected events');button(p,'Keep event',true);",
+    "import": "note(p,'From schedule to calendar','Choose a source. You’ll review the events and tags before adding them.');row(p,'Upload a PDF','Timetables, class plans and schedules');row(p,'Choose a photo','Import from your camera roll');row(p,'Paste a link','A public schedule or event page');row(p,'School or work portal','Sign in to a protected schedule');",
+    "link": "field(p,'Schedule link','https://example.edu/schedule');row(p,'Default tag','School');note(p,'We’ll look for event details','Dates, times, names and locations will be ready for your review.');button(p,'Find events');button(p,'Use a protected portal instead',true);",
+    "portal": "field(p,'Portal address','https://portal.example.edu');row(p,'Default tag','School');note(p,'Sign in with your provider','Your portal opens inside Calander. Sign in there, then open the schedule you want to import.');button(p,'Open portal');",
+    "portalweb": "note(p,'portal.example.edu','Protected portal · Example browser view');heading(p,'Student Portal');field(p,'Student email','you@example.edu');field(p,'Password','Enter on the provider’s website');button(p,'Sign in to portal',true);txt(p,'After signing in, navigate to your schedule.','Small','muted',342);button(p,'Import this page');button(p,'Cancel',true);",
+    "review": "p.itemSpacing=12;event(p,'Design lecture','Mon, Sep 14 · 10:00–11:30','✓ SCHOOL · FIXED','purpleBg');event(p,'Study group','Tue, Sep 15 · 16:00–17:00','✓ SCHOOL · FLEXIBLE','purpleBg');event(p,'Project workshop','Wed, Sep 16 · 14:00–16:00','✓ SCHOOL · FIXED','purpleBg');row(p,'Assign tags','All selected → School');txt(p,'Tap an event to correct details or deselect it.','Small','muted',342);button(p,'Add 3 events');",
+    "conflict": "event(p,'Design lecture','Mon, Sep 14 · 10:00–11:30','EXISTING · FIXED','purpleBg');event(p,'Coffee with Maya','Mon, Sep 14 · 11:00–12:00','IMPORTED · FLEXIBLE','greenBg');heading(p,'How would you like to handle this?');row(p,'Move coffee to 11:30','Keep your lecture unchanged','✓');row(p,'Keep both times','Show the overlap in your calendar','○');row(p,'Skip the imported event','','○');button(p,'Confirm choice');",
+    "importdone": "spacer(p,48);note(p,'3 events added','Your school schedule is now in your calendar. Each event has the School tag.','greenBg');button(p,'View calendar');button(p,'Import another schedule',true);",
+    "importerror": "spacer(p,32);note(p,'No events found','Try a clearer photo, a different PDF or a page that shows event dates and times.','orangeBg');button(p,'Choose another source');button(p,'Add an event manually',true);",
+    "sports": "chips(p,['Following','Upcoming'],0);event(p,'North FC vs City United','Sat, Sep 12 · 15:00','FOOTBALL · SAMPLE FIXTURE','greenBg');event(p,'Harbor vs Mountain','Sun, Sep 13 · 19:30','BASKETBALL · SAMPLE FIXTURE','orangeBg');heading(p,'Your teams');row(p,'North FC','Football · Following','✓');row(p,'Harbor','Basketball · Following','✓');button(p,'Follow more teams');",
+    "follow": "field(p,'Find a team','Search teams or leagues');chips(p,['Football','Basketball'],0);row(p,'North FC','Premier Division','✓');row(p,'City United','Premier Division','+');row(p,'Riverside','National League','+');button(p,'Save followed teams');",
+    "match": "spacer(p,12);const m=box(p,'Fixture',342,'VERTICAL',12,'greenBg',24);round(m,'r24');txt(m,'FOOTBALL · PREMIER DIVISION','Caption','green',294);txt(m,'North FC\\nvs City United','Title','text',294);txt(m,'Saturday, Sep 12 · 15:00','Label','text',294);txt(m,'North Stadium','Body','muted',294);row(p,'Calendar tag','Personal');row(p,'Reminder','30 minutes before');button(p,'Add match to calendar');",
+    "friends": "field(p,'Search friends','Name or username');row(p,'Maya Chen','@mayachen');row(p,'Sam Rivera','@samrivera');row(p,'Jordan Lee','@jordanlee');row(p,'Friend requests','1 waiting for you','1');button(p,'Add a friend');",
+    "addfriend": "field(p,'Username','@taylorkim');row(p,'Taylor Kim','@taylorkim','+');button(p,'Send friend request');note(p,'Make plans together','Once your request is accepted, you can invite Taylor to calendar events.');",
+    "requests": "heading(p,'Received · 1');row(p,'Taylor Kim','@taylorkim');button(p,'Accept request');button(p,'Decline',true);heading(p,'Sent · 1');row(p,'Jamie Park','@jamiepark · Pending','…');",
+    "tags": "row(p,'●  Work','8 events','›','accent');row(p,'●  Personal','12 events','›','green');row(p,'●  School','6 events','›','purple');note(p,'Keep imports organized','Choose a default tag when you import. You can change each event’s tag during review.');button(p,'Create a tag');",
+    "newtag": "field(p,'Tag name','Fitness');heading(p,'Color');chips(p,['Blue','Green','Purple'],1);chips(p,['Amber','Rose','Slate'],-1);note(p,'Preview','●  Fitness','greenBg');button(p,'Create tag');",
+    "notifications": "heading(p,'Today');row(p,'Design review in 15 minutes','09:00 · Studio 2');row(p,'Your schedule changed','Design lecture moved to 10:00');row(p,'Maya accepted your invitation','Design review · Friday');heading(p,'Earlier');row(p,'Calendar connected','Google Calendar is up to date','✓');button(p,'Mark all as read',true);",
+    "settings": "p.itemSpacing=10;row(p,'Alex Morgan','@alexmorgan');row(p,'Appearance','Light');row(p,'Connected calendars','2 connected');row(p,'Tags','Work, Personal, School');row(p,'Notifications','Reminders and schedule changes');row(p,'Export calendar','Calendar file or image');row(p,'Widgets & Live Activities','Your day at a glance');",
+    "appearance": "row(p,'Light','Bright and clear','✓');row(p,'Dark','Easy on the eyes','○');row(p,'Use device setting','Follow your phone’s appearance','○');note(p,'A preview of your day','Design review · 09:00–10:00');button(p,'Save appearance');",
+    "connections": "row(p,'Google Calendar','alex@example.com · Connected','✓');row(p,'Microsoft Outlook','School account · Connected','✓');row(p,'Apple iCloud','Connect via iCloud / CalDAV','+');row(p,'Sync status','Updated just now','✓');note(p,'Choose what appears','Tap a connected account to choose calendars or disconnect it.');button(p,'Sync now');",
+    "export": "chips(p,['.ics file','Image'],0);row(p,'Date range','September 1–30, 2026');row(p,'Include tags','Work, Personal, School');note(p,'Ready for other calendars','An .ics file keeps event dates and times. Choose Image for a visual snapshot.');button(p,'Export calendar');",
+    "account": "field(p,'Name','Alex Morgan');field(p,'Username','alexmorgan');row(p,'Email','alex@example.com · Verified','✓');row(p,'Password','Send a password reset link');button(p,'Save account');button(p,'Sign out',true);",
+    "alerts": "row(p,'Upcoming events','Use each event’s reminder','On');row(p,'Schedule changes','Get notified when event times change','On');row(p,'Guest responses','Invitations and RSVPs','On');row(p,'Sports updates','Changes to followed fixtures','Off');note(p,'Phone notifications','Allow notifications in your device settings to receive alerts.');button(p,'Save preferences');",
+    "widgets": "heading(p,'Home screen widget');event(p,'Up next · Design review','09:00–10:00 · Studio 2','CALANDER · IN 15 MIN');heading(p,'Live Activity');const island=box(p,'Dynamic Island preview',342,'VERTICAL',8,'text',24);round(island,'r24');txt(island,'Design review                  15 min','Label','surface',294);txt(island,'Studio 2 · Starts at 09:00','Small','surface',294);row(p,'Live Activities','Show your next event','On');txt(p,'Add the Calander widget from your iPhone’s home screen widget gallery.','Small','muted',342);button(p,'Done');",
+    "signout": "spacer(p,32);note(p,'See you soon, Alex','Your calendar is saved to your account. Log in again to pick up where you left off.');button(p,'Sign out');button(p,'Stay signed in',true);",
+    "month": "p.itemSpacing=12;chips(p,['Month','Week','Day'],0);const cal=box(p,'September calendar',342,'VERTICAL',4,'surface',8);round(cal);const c=await figma.getNodeByIdAsync('8:154');let head=box(cal,'Weekdays',326,'HORIZONTAL',2);for(const d of ['M','T','W','T','F','S','S']){const t=txt(head,d,'Caption','muted',44);t.textAlignHorizontal='CENTER';}for(let week=0;week<5;week++){const rr=box(cal,'Week '+week,326,'HORIZONTAL',2);for(let day=0;day<7;day++){const num=week*7+day;const display=num===0?'31':num>30?String(num-30):String(num);const n=instance(rr,c,{Day:display});if(num===11){fill(n,'primary');n.findAllWithCriteria({types:['TEXT']}).forEach(t=>t.fills=[paint('onPrimary')]);}else if(num===0||num>30)n.opacity=.35;}}heading(p,'Friday 11 · 3 events');event(p,'Design review','09:00–10:00 · Studio 2','WORK · FIXED');event(p,'Lunch with Maya','12:30–13:30 · Olive Café','PERSONAL · FLEXIBLE','greenBg');button(p,'+  New event');",
+    "week": "p.itemSpacing=12;chips(p,['Month','Week','Day'],1);const week=box(p,'Week planner',342,'VERTICAL',8,'surface',12);round(week);const days=box(week,'Dates',318,'HORIZONTAL',6);for(const [i,s] of ['M 7','T 8','W 9','T 10','F 11','S 12','S 13'].entries()){const col=box(days,s,40,'VERTICAL',10,i===4?'tint':null,0);round(col,'r12');txt(col,s,'Caption',i===4?'accent':'muted',40);for(let j=0;j<4;j++){const block=box(col,'Time block',40,'VERTICAL',4,(i+j)%3===0?'tint':(i+j)%4===0?'greenBg':null);block.resize(40,48);block.primaryAxisSizingMode='FIXED';if((i+j)%3===0)txt(block,j===0?'9 am':'2 pm','Caption','accent',40);}}txt(week,'Morning → afternoon · All times local','Caption','muted',318);heading(p,'Friday highlights');event(p,'Design review','09:00–10:00 · Studio 2');button(p,'+  New event');",
+    "day": "p.itemSpacing=12;chips(p,['Month','Week','Day'],2);heading(p,'TODAY · SEPTEMBER 11');event(p,'Design review','09:00–10:00 · Studio 2','WORK · FIXED');txt(p,'10:00–12:30  ·  2½ hours free','Small','muted',342);event(p,'Lunch with Maya','12:30–13:30 · Olive Café','PERSONAL · FLEXIBLE','greenBg');event(p,'Evening walk','18:00–18:45 · Riverside','PERSONAL · FLEXIBLE','greenBg');button(p,'+  New event');"
+  }
+}
