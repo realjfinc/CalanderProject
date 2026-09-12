@@ -12,6 +12,13 @@ service cloud.firestore {
       match /meta/{metaId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Per-user events (Step 3 introduces this collection via upload
+      // extraction). Only the owning, authenticated user may read or write
+      // their own events.
+      match /events/{eventId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // Default deny for everything else.

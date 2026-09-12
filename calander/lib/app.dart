@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'auth/auth_screens.dart';
 import 'auth/auth_service.dart';
 import 'auth/auth_widgets.dart';
+import 'services/cloud_function_extraction_service.dart';
+import 'services/firestore_event_repository.dart';
 import 'services/firestore_tag_repository.dart';
+import 'services/upload_storage.dart';
 import 'theme.dart';
+import 'ui/extraction/upload_event_screen.dart';
 import 'ui/tags/tag_management_screen.dart';
 
 class CalanderApp extends StatelessWidget {
@@ -82,6 +86,19 @@ class _TestHomePageState extends State<TestHomePage> {
     );
   }
 
+  void _openUploadEvent() {
+    final uid = widget.auth.account!.uid;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => UploadEventScreen(
+          extractionService: CloudFunctionExtractionService(),
+          eventRepository: FirestoreEventRepository(uid: uid),
+          uploadStorage: FirebaseUploadStorage(uid: uid),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
@@ -95,6 +112,8 @@ class _TestHomePageState extends State<TestHomePage> {
               children: [
                 AuthMessage(_error),
                 AuthButton('Manage Tags', onPressed: _openTagManagement, busy: _busy),
+                const SizedBox(height: 12),
+                AuthButton('Add Event from Upload', onPressed: _openUploadEvent, busy: _busy),
                 const SizedBox(height: 12),
                 AuthButton('Log out', onPressed: _logout, busy: _busy),
               ],

@@ -10,7 +10,7 @@ Light and dark themes follow the device setting. Inter is bundled locally with i
 - Unverified accounts stay on the verification screen, including restored sessions.
 - Verification refreshes manually or when the app returns to the foreground.
 - Password-reset links open Firebase's hosted reset page; return to the app to log in.
-- Verified accounts see a home screen with a "Manage Tags" entry point and a logout button.
+- Verified accounts see a home screen with "Manage Tags", "Add Event from Upload", and a logout button.
 - Google and Apple buttons are placeholders only.
 
 ## Firebase
@@ -39,6 +39,26 @@ Relevant code: `lib/models/event_tag.dart`, `lib/services/tag_repository.dart`,
 Tests use `fake_cloud_firestore` instead of a live backend
 (`test/firestore_tag_repository_test.dart`, `test/tag_management_screen_test.dart`).
 
+## Upload/Image/Link Event Extraction (Step 3)
+
+From the home screen's "Add Event from Upload" button: pick a photo, take a
+photo, choose a PDF/image file, or paste a link. The `extractEvent` Cloud
+Function (`../functions/`) sends the content to an LLM, normalizes the
+result to UTC, and returns proposed event fields — nothing is saved yet.
+The confirm screen lets the user review/edit those fields before tapping
+"Save Event", which writes a `CalendarEvent` with `source: "upload"`,
+`sourceId: null`, `tag: null` (only direct user action or Step 5's routing
+logic may ever set `tag`) and, if a file was involved, uploads it to Cloud
+Storage and records its URL in `attachments`.
+
+Relevant code: `lib/models/calendar_event.dart`, `lib/models/extraction_input.dart`,
+`lib/models/extracted_event_draft.dart`, `lib/services/event_extraction_service.dart`,
+`lib/services/cloud_function_extraction_service.dart`, `lib/services/upload_storage.dart`,
+`lib/services/firestore_event_repository.dart`,
+`lib/ui/extraction/upload_event_screen.dart`, `lib/ui/extraction/extraction_confirm_screen.dart`.
+See `../functions/README.md` for the extraction pipeline itself, including
+the (not-yet-done) Blaze plan and API key setup it needs to actually deploy.
+
 ## Run
 
 From this folder:
@@ -66,7 +86,14 @@ logout, and narrow layouts with enlarged text. Preview renders are saved under
 `build/auth-previews/`. The tag-system tests use `fake_cloud_firestore` and an
 in-memory repository fake, and cover default-tag initialization (including
 idempotency and non-resurrection of deleted defaults), add/edit/delete, and
-per-user scoping.
+per-user scoping. The extraction tests use fakes for the extraction service,
+event repository, and upload storage (no real Cloud Function, LLM, or
+Storage call is made) and cover: the confirm screen saving with
+`source: "upload"`/`sourceId: null`/`tag: null`, nothing being saved before
+the user confirms, field edits before save, empty-title rejection, and
+attachment upload wiring. `../functions/` has its own test suite (see
+`../functions/README.md`) covering UTC normalization, LLM response parsing,
+and link/PDF text extraction against fakes.
 
 Before testing was stopped at the user's request, analysis and widget tests passed,
 and the web build succeeded. Android compilation was blocked while downloading
