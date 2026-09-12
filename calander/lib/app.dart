@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'auth/auth_screens.dart';
 import 'auth/auth_service.dart';
 import 'auth/auth_widgets.dart';
+import 'services/firestore_event_repository.dart';
 import 'services/firestore_tag_repository.dart';
+import 'services/firestore_tag_routing_repository.dart';
 import 'theme.dart';
 import 'ui/tags/tag_management_screen.dart';
+import 'ui/tags/tag_routing_screen.dart';
 
 class CalanderApp extends StatelessWidget {
   const CalanderApp({
@@ -82,6 +85,19 @@ class _TestHomePageState extends State<TestHomePage> {
     );
   }
 
+  void _openTagRouting() {
+    final uid = widget.auth.account!.uid;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TagRoutingScreen(
+          eventRepository: FirestoreEventRepository(uid: uid),
+          tagRepository: FirestoreTagRepository(uid: uid),
+          routingRepository: FirestoreTagRoutingRepository(uid: uid),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
@@ -95,6 +111,8 @@ class _TestHomePageState extends State<TestHomePage> {
               children: [
                 AuthMessage(_error),
                 AuthButton('Manage Tags', onPressed: _openTagManagement, busy: _busy),
+                const SizedBox(height: 12),
+                AuthButton('Tag Routing', onPressed: _openTagRouting, busy: _busy),
                 const SizedBox(height: 12),
                 AuthButton('Log out', onPressed: _logout, busy: _busy),
               ],

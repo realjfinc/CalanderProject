@@ -12,6 +12,18 @@ service cloud.firestore {
       match /meta/{metaId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Per-user events. Only the owning, authenticated user may read or
+      // write their own events (Step 5 needs both: reading to find
+      // untagged events, writing to assign a tag).
+      match /events/{eventId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Per-user settings, including tag-routing rules (Step 5).
+      match /settings/{settingId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // Default deny for everything else.
