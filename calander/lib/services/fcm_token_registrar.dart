@@ -7,9 +7,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 /// reacting to a synced-provider event change, added in a later step) has
 /// somewhere to send push notifications for this user.
 ///
-/// Stored at `users/{uid}/meta/fcmToken`, which `firestore.rules` already
-/// scopes to the owning authenticated user (see Step 1's `meta/{metaId}`
-/// rule).
+/// Stored at `users/{uid}/meta/fcmToken`, which this branch's
+/// `firestore.rules` scopes to the owning authenticated user via the
+/// `meta/{metaId}` rule.
 class FcmTokenRegistrar {
   factory FcmTokenRegistrar({
     required String uid,
