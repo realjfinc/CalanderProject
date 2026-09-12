@@ -324,9 +324,9 @@ class _WelcomePreview extends StatelessWidget {
               ?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
-        const Text('12:30   Lunch with Maya'),
+        const Text('12:30   Jets game'),
         const SizedBox(height: 12),
-        const Text('18:00   A little time for you'),
+        const Text('18:00   A little time to relax'),
       ],
     ),
   );
