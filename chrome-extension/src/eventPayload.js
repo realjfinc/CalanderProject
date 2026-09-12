@@ -1,0 +1,44 @@
+/**
+ * Builds the `extractEvent` callable request for a captured screenshot.
+ * Same Cloud Function as Step 3 (`functions/src/index.ts`) — no duplicate
+ * extraction logic here, just a different `type`/content source.
+ */
+export function buildExtractionRequest({ base64, mimeType, timezone }) {
+  if (!base64 || !mimeType || !timezone) {
+    throw new Error("buildExtractionRequest requires base64, mimeType, and timezone.");
+  }
+  return { type: "image", data: base64, mimeType, timezone };
+}
+
+/**
+ * Builds the canonical event fields to save after the user confirms an
+ * extraction result. Deliberately framework-agnostic (plain ISO date
+ * strings, not a Firestore Timestamp) so it's usable from a Node test
+ * without pulling in the Firestore SDK — the caller converts to whatever
+ * the write path needs.
+ *
+ * Per the hard contract: source is always "screenshot", sourceId and tag
+ * are always null (only direct user action or Step 5's routing logic may
+ * ever set tag) — this function does not accept overrides for any of those
+ * three fields.
+ */
+export function buildScreenshotEvent({ title, location, startUtc, endUtc, notes, attachmentUrl }) {
+  if (!startUtc || !endUtc) {
+    throw new Error("buildScreenshotEvent requires startUtc and endUtc.");
+  }
+  return {
+    title: title && title.trim() ? title.trim() : "Untitled event",
+    location: location && location.trim() ? location.trim() : null,
+    start: startUtc,
+    end: endUtc,
+    source: "screenshot",
+    sourceId: null,
+    status: "active",
+    tag: null,
+    importance: "flexible",
+    notes: notes && notes.trim() ? notes.trim() : null,
+    attachments: attachmentUrl ? [attachmentUrl] : null,
+    repeat: null,
+    reminders: null,
+  };
+}

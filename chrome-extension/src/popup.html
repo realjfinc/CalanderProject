@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Calander</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <h1>Calander</h1>
+
+    <section id="login-section">
+      <p id="login-error" class="error" hidden></p>
+      <label>Email <input id="email-input" type="email" autocomplete="username" /></label>
+      <label>Password <input id="password-input" type="password" autocomplete="current-password" /></label>
+      <button id="sign-in-button" type="button">Sign In</button>
+    </section>
+
+    <section id="main-section" hidden>
+      <button id="capture-button" type="button">Capture This Tab</button>
+      <button id="sign-out-button" type="button">Sign Out</button>
+      <p id="status-text"></p>
+
+      <form id="confirm-form" hidden>
+        <label>Title <input id="title-input" type="text" /></label>
+        <label>Location <input id="location-input" type="text" /></label>
+        <label>Starts <input id="start-input" type="datetime-local" /></label>
+        <label>Ends <input id="end-input" type="datetime-local" /></label>
+        <label>Notes <textarea id="notes-input"></textarea></label>
+        <button id="save-button" type="submit">Save Event</button>
+        <button id="discard-button" type="button">Discard</button>
+      </form>
+    </section>
+
+    <script src="../dist/popup.bundle.js"></script>
+  </body>
+</html>
