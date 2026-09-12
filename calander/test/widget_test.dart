@@ -169,13 +169,14 @@ void main() {
   );
 
   testWidgets(
-    'Verified session shows Manage Tags and Log out controls, and clears on logout',
+    'Verified session shows Manage Tags, Provider Sync, and Log out controls, and clears on logout',
     (tester) async {
       final auth = TestAuth()..setUser(verified: true);
       await mount(tester, auth);
-      // Step 1 added a "Manage Tags" entry point alongside "Log out".
-      expect(find.byType(FilledButton), findsNWidgets(2));
+      // Step 1 added "Manage Tags"; Step 6 added "Provider Sync".
+      expect(find.byType(FilledButton), findsNWidgets(3));
       expect(find.text('Manage Tags'), findsOneWidget);
+      expect(find.text('Provider Sync'), findsOneWidget);
       expect(find.text('Welcome'), findsNothing);
       await tapText(tester, 'Log out');
       expect(find.text('Welcome'), findsOneWidget);
