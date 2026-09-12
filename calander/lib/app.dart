@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'auth/auth_screens.dart';
 import 'auth/auth_service.dart';
 import 'auth/auth_widgets.dart';
+import 'services/firestore_tag_repository.dart';
 import 'theme.dart';
+import 'ui/tags/tag_management_screen.dart';
 
 class CalanderApp extends StatelessWidget {
   const CalanderApp({
@@ -69,6 +71,17 @@ class _TestHomePageState extends State<TestHomePage> {
     }
   }
 
+  void _openTagManagement() {
+    final uid = widget.auth.account!.uid;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TagManagementScreen(
+          repository: FirestoreTagRepository(uid: uid),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
@@ -81,6 +94,8 @@ class _TestHomePageState extends State<TestHomePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AuthMessage(_error),
+                AuthButton('Manage Tags', onPressed: _openTagManagement, busy: _busy),
+                const SizedBox(height: 12),
                 AuthButton('Log out', onPressed: _logout, busy: _busy),
               ],
             ),
