@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // Per-user tag collection (Step 1). Only the owning, authenticated
+      // user may read or write their own tags or tag-init marker.
+      match /tags/{tagId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /meta/{metaId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Default deny for everything else.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
