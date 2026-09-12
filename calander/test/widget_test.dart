@@ -1,30 +1,244 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
+import 'package:calander/app.dart';
+import 'package:calander/auth/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:calander/main.dart';
+class TestAuth extends AuthService {
+  AuthAccount? user;
+  int signups = 0;
+  int resets = 0;
+  int refreshes = 0;
+  int resends = 0;
+  bool verifyOnRefresh = false;
+  Completer<void>? loginPending;
+  @override
+  AuthAccount? get account => user;
+  @override
+  bool get loading => false;
+  @override
+  String? get notice => null;
+  void setUser({bool verified = false}) {
+    user = AuthAccount(
+      uid: 'test-user',
+      email: 'test@example.com',
+      verified: verified,
+    );
+    notifyListeners();
+  }
+
+  @override
+  Future<void> createAccount(String name, String email, String password) async {
+    signups++;
+    setUser();
+  }
+
+  @override
+  Future<void> logIn(String email, String password) async {
+    if (loginPending != null) await loginPending!.future;
+    setUser(verified: true);
+  }
+
+  @override
+  Future<void> sendPasswordReset(String email) async {
+    resets++;
+  }
+
+  @override
+  Future<void> sendVerification() async {
+    resends++;
+  }
+
+  @override
+  Future<void> refreshAccount() async {
+    refreshes++;
+    if (verifyOnRefresh) setUser(verified: true);
+  }
+
+  @override
+  Future<void> logOut() async {
+    user = null;
+    notifyListeners();
+  }
+}
+
+Future<void> tapText(WidgetTester tester, String text) async {
+  final target = find.text(text).last;
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
+Future<void> mount(
+  WidgetTester tester,
+  TestAuth auth, {
+  ThemeMode mode = ThemeMode.light,
+}) async {
+  await tester.pumpWidget(CalanderApp(auth: auth, themeMode: mode));
+  await tester.pumpAndSettle();
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUpAll(() async {
+    final font = FontLoader('Inter')
+      ..addFont(rootBundle.load('assets/fonts/Inter.ttf'));
+    await font.load();
+  });
+  testWidgets('Welcome uses Calander and social buttons remain visual only', (
+    tester,
+  ) async {
+    final auth = TestAuth();
+    await mount(tester, auth);
+    expect(find.text('Calander'), findsOneWidget);
+    await tapText(tester, 'I already have an account');
+    await tapText(tester, 'Continue with Google');
+    expect(
+      find.text(
+        'Google sign-in isn’t available yet. Please use email and password.',
+      ),
+      findsOneWidget,
+    );
+    expect(auth.account, isNull);
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('Signup validates fields, then gates the home on verification', (
+    tester,
+  ) async {
+    final auth = TestAuth();
+    await mount(tester, auth);
+    await tapText(tester, 'Get started');
+    await tapText(tester, 'Create account');
+    expect(auth.signups, 0);
+    expect(find.text('Enter a valid email address.'), findsOneWidget);
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'Test User');
+    await tester.enterText(fields.at(1), 'test@example.com');
+    await tester.enterText(fields.at(2), 'testing123');
+    await tester.enterText(fields.at(3), 'different123');
+    await tapText(tester, 'Create account');
+    expect(find.text('Your passwords don’t match.'), findsOneWidget);
+    await tester.enterText(fields.at(3), 'testing123');
+    await tapText(tester, 'Create account');
+    expect(auth.signups, 1);
+    expect(find.text('Check your inbox'), findsOneWidget);
+    expect(find.text('Log out'), findsNothing);
+    await tapText(tester, 'I’ve verified my email');
+    expect(find.text('Log out'), findsNothing);
+    auth.verifyOnRefresh = true;
+    await tapText(tester, 'I’ve verified my email');
+    expect(find.text('Log out'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets(
+    'Restored unverified session remains gated and resend is throttled',
+    (tester) async {
+      final auth = TestAuth()..setUser();
+      await mount(tester, auth);
+      expect(find.text('Log out'), findsNothing);
+      await tapText(tester, 'Resend email');
+      expect(auth.resends, 1);
+      expect(find.text('Resend email in 60s'), findsOneWidget);
+      await tapText(tester, 'Use a different account');
+      expect(find.text('Welcome'), findsOneWidget);
+    },
+  );
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets(
+    'Password reset shows a neutral confirmation and returns to login',
+    (tester) async {
+      final auth = TestAuth();
+      await mount(tester, auth);
+      await tapText(tester, 'I already have an account');
+      await tapText(tester, 'Forgot password?');
+      await tester.enterText(find.byType(TextFormField), 'unknown@example.com');
+      await tapText(tester, 'Send reset link');
+      expect(auth.resets, 1);
+      expect(
+        find.textContaining('If an account exists for unknown@example.com'),
+        findsOneWidget,
+      );
+      await tapText(tester, 'Back to log in');
+      expect(find.text('Welcome back'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Verified session has only the logout control and clears on logout',
+    (tester) async {
+      final auth = TestAuth()..setUser(verified: true);
+      await mount(tester, auth);
+      expect(find.byType(FilledButton), findsOneWidget);
+      expect(find.text('Welcome'), findsNothing);
+      await tapText(tester, 'Log out');
+      expect(find.text('Welcome'), findsOneWidget);
+      expect(find.text('Log out'), findsNothing);
+    },
+  );
+
+  for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    testWidgets('${mode.name} screens fit narrow phones and larger text', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        tester.platformDispatcher.clearTextScaleFactorTestValue();
+      });
+      await mount(tester, TestAuth(), mode: mode);
+      expect(tester.takeException(), isNull);
+      await tapText(tester, 'Get started');
+      expect(tester.takeException(), isNull);
+      await tapText(tester, 'Already have an account? Log in');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('Render welcome and login previews for visual review', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+      final key = GlobalKey();
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: CalanderApp(
+            key: ValueKey(mode),
+            auth: TestAuth(),
+            themeMode: mode,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (final screen in ['welcome', 'login']) {
+        if (screen == 'login') {
+          await tapText(tester, 'I already have an account');
+        }
+        final boundary =
+            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        await tester.runAsync(() async {
+          final image = await boundary.toImage();
+          final data = await image.toByteData(format: ui.ImageByteFormat.png);
+          final file = File('build/auth-previews/$screen-${mode.name}.png');
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes(data!.buffer.asUint8List());
+          image.dispose();
+        });
+      }
+    }
   });
 }
