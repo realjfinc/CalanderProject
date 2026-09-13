@@ -44,6 +44,28 @@ Relevant code: `lib/models/event_tag.dart`, `lib/services/tag_repository.dart`,
 Tests use `fake_cloud_firestore` instead of a live backend
 (`test/firestore_tag_repository_test.dart`, `test/tag_management_screen_test.dart`).
 
+## Notifications (Step 2)
+
+Local reminders use `flutter_local_notifications`. Each event's `reminders`
+field (a list of offsets — 5/10/15/30 min, 1 hour, 1 day before start) is
+turned into a scheduled notification by `services/reminder_planner.dart`
+(pure scheduling decision) and `services/notification_scheduler.dart`
+(reconciles the plugin's scheduled set against the current event list).
+`services/notification_reconciler.dart` wires that to a live
+`users/{uid}/events` Firestore stream. This step only *consumes* the
+`reminders` field — the UI for picking a reminder offset is Jonathan's.
+
+FCM handles synced-event-change pushes: `services/push_notification_service.dart`
+shows a local notification for any message with `data.type == "event_change"`
+(foreground and background/terminated, via a top-level handler registered in
+`main.dart`). `services/fcm_token_registrar.dart` stores the device's token at
+`users/{uid}/meta/fcmToken` so a future backend has somewhere to send to —
+no such backend exists yet in this repo.
+
+All of this is bootstrapped from `main.dart` (not the widget tree), so it
+only runs against the real, initialized Firebase app and never activates
+during `test/widget_test.dart`'s fake-auth widget tests.
+
 ## Provider Sync (Step 6)
 
 Settings > Provider Sync opens two tabs:
