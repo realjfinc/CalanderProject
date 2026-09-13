@@ -4,114 +4,74 @@ import '../../models/calendar_event.dart';
 import '../../models/followed_team.dart';
 import '../../services/event_repository.dart';
 import '../../services/followed_teams_repository.dart';
-import '../../services/provider_sync.dart';
-import '../../services/sports_adapter.dart';
-import '../../services/thesportsdb_client.dart';
 
-/// Shows followed teams and their next game, and a button to sync upcoming
-/// games into the calendar (same dedup/conflict pipeline as Step 6).
-class DashboardTab extends StatefulWidget {
+/// Shows each followed team's next game.
+///
+/// Deliberately makes no TheSportsDB call of its own -- game data comes
+/// entirely from this user's already-synced calendar events. Keeping
+/// those current is the scheduled poller's job (`functions/`'s
+/// `pollSportsEvents` or `scripts/sports_poller/`'s Python equivalent),
+/// not something a person has to remember to trigger from here.
+class DashboardTab extends StatelessWidget {
   const DashboardTab({
     super.key,
     required this.followedTeamsRepository,
-    required this.apiClient,
     required this.eventRepository,
   });
 
   final FollowedTeamsRepository followedTeamsRepository;
-  final TheSportsDbClient apiClient;
   final EventRepository eventRepository;
-
-  @override
-  State<DashboardTab> createState() => _DashboardTabState();
-}
-
-class _DashboardTabState extends State<DashboardTab> {
-  bool _syncing = false;
-  String? _status;
-
-  Future<void> _syncToCalendar() async {
-    setState(() {
-      _syncing = true;
-      _status = null;
-    });
-    try {
-      await syncProvider(
-        adapter: SportsAdapter(
-          followedTeamsRepository: widget.followedTeamsRepository,
-          apiClient: widget.apiClient,
-        ),
-        repository: widget.eventRepository,
-      );
-      setState(() => _status = 'Synced upcoming games to your calendar.');
-    } catch (error) {
-      setState(() => _status = 'Sync failed: $error');
-    } finally {
-      setState(() => _syncing = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<FollowedTeam>>(
-      stream: widget.followedTeamsRepository.watchFollowedTeams(),
-      builder: (context, snapshot) {
-        final teams = snapshot.data ?? const [];
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: _syncing ? null : _syncToCalendar,
-                    child: _syncing
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator())
-                        : const Text('Sync Upcoming Games to Calendar'),
+      stream: followedTeamsRepository.watchFollowedTeams(),
+      builder: (context, teamsSnapshot) {
+        final teams = teamsSnapshot.data ?? const [];
+        if (teams.isEmpty) {
+          return const Center(child: Text('Follow a team to see it here.'));
+        }
+        return StreamBuilder<List<CalendarEvent>>(
+          stream: eventRepository.watchEvents(),
+          builder: (context, eventsSnapshot) {
+            final events = eventsSnapshot.data ?? const [];
+            return ListView.builder(
+              itemCount: teams.length,
+              itemBuilder: (context, index) {
+                final team = teams[index];
+                final nextGame = nextGameForTeam(team, events);
+                return ListTile(
+                  title: Text(team.name),
+                  subtitle: Text(
+                    nextGame == null
+                        ? 'No upcoming games synced yet'
+                        : '${nextGame.title} — ${nextGame.start.toLocal()}',
                   ),
-                  if (_status != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_status!)),
-                ],
-              ),
-            ),
-            Expanded(
-              child: teams.isEmpty
-                  ? const Center(child: Text('Follow a team to see it here.'))
-                  : ListView.builder(
-                      itemCount: teams.length,
-                      itemBuilder: (context, index) => _TeamTile(team: teams[index], apiClient: widget.apiClient),
-                    ),
-            ),
-          ],
+                );
+              },
+            );
+          },
         );
       },
     );
   }
 }
 
-class _TeamTile extends StatelessWidget {
-  const _TeamTile({required this.team, required this.apiClient});
-
-  final FollowedTeam team;
-  final TheSportsDbClient apiClient;
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<CalendarEvent>>(
-      future: apiClient.fetchUpcomingEventsRaw(team.id).then(
-        (raw) => raw.map(mapSportsDbEvent).whereType<CalendarEvent>().toList(),
-      ),
-      builder: (context, snapshot) {
-        final games = snapshot.data ?? const [];
-        final nextGame = games.isEmpty ? null : games.first;
-        return ListTile(
-          title: Text(team.name),
-          subtitle: Text(
-            nextGame == null
-                ? (snapshot.connectionState == ConnectionState.waiting ? 'Loading…' : 'No upcoming games')
-                : '${nextGame.title} — ${nextGame.start.toLocal()}',
-          ),
-        );
-      },
-    );
-  }
+/// The earliest still-upcoming synced game whose title mentions this
+/// team, or null if none. The canonical event schema doesn't carry a
+/// team id (only `notes` = league name), so this matches the same way a
+/// person reading the title would -- `mapSportsDbEvent`'s title is always
+/// `"$home vs $away"` when both team names are known, so a followed
+/// team's own name reliably appears in its games' titles.
+CalendarEvent? nextGameForTeam(FollowedTeam team, List<CalendarEvent> events) {
+  final now = DateTime.now().toUtc();
+  final teamName = team.name.toLowerCase();
+  final upcoming =
+      events.where((event) {
+          if (event.source != EventSource.sports) return false;
+          if (!event.start.isAfter(now)) return false;
+          return event.title.toLowerCase().contains(teamName);
+        }).toList()
+        ..sort((a, b) => a.start.compareTo(b.start));
+  return upcoming.isEmpty ? null : upcoming.first;
 }

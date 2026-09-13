@@ -189,26 +189,35 @@ added to your calendar automatically. Followed teams are stored at
 following the same team twice is a no-op). Open it from Settings > Sports
 Mode:
 
-- **Follow Teams** tab: search TheSportsDB by name, follow/unfollow.
-- **Dashboard** tab: see each followed team's next game, and a "Sync Upcoming
-  Games to Calendar" button that pulls every followed team's upcoming games
-  into your calendar on demand.
+- **Follow Teams** tab: search TheSportsDB by name, follow/unfollow. This is
+  the one place in Sports Mode that calls TheSportsDB directly from the
+  app — there's no way to browse/search an external directory without it.
+- **Dashboard** tab: see each followed team's next game, read entirely from
+  this user's already-synced calendar events (`nextGameForTeam` in
+  `lib/ui/sports/dashboard_tab.dart` matches by title, since the canonical
+  event schema doesn't carry a team id). No API call happens here, and
+  there's no manual sync button — a game only shows up once a backend
+  poller has ingested it (see below), the same way a Google/Outlook/iCloud
+  event only shows up after Provider Sync runs.
 
 Games are ingested as `source: "sports"`, `sourceId` = TheSportsDB's own event
 id, `tag: null` — same as every other source, sports games are only ever
 tagged by direct user action or Step 5's routing logic, never by this
 integration. Dedup and cross-source conflict detection reuse Step 6's shared
-`ingestProviderEvent`/`syncProvider` utilities as-is (`SportsAdapter`
-implements the same `ProviderAdapter` interface Step 6's Google/Outlook/
-iCloud adapters do) — no separate sports-specific dedup logic exists.
+`ingestProviderEvent`/`syncProvider` utilities.
 
-A scheduled Cloud Function (`../functions/`, see its own README) polls every
-user's followed teams every 6 hours and ingests new games the same way via
-the Admin SDK (which bypasses `firestore.rules`' schema validation, so it
-writes only the canonical fields — the client's `CalendarEvent.fromMap()`
-already tolerates a document missing the dashboard's `startAt`/`endAt`/etc.
-mirror fields, falling back to the canonical ones), so games appear even if
-you never open the dashboard's sync button yourself.
+Two backend pollers can populate this, and only one is deployed at a time:
+
+- A scheduled Cloud Function (`../functions/`, see its own README) polls
+  every user's followed teams every 6 hours and ingests new games via the
+  Admin SDK (which bypasses `firestore.rules`' schema validation, so it
+  writes only the canonical fields — the client's `CalendarEvent.fromMap()`
+  already tolerates a document missing the dashboard's `startAt`/`endAt`/etc.
+  mirror fields, falling back to the canonical ones). Needs the Blaze plan
+  to deploy.
+- `../scripts/sports_poller/` is a Python port of the identical logic that
+  does the same job hourly via a free GitHub Actions cron, with no Firebase
+  billing change needed — see its README for setup.
 
 Relevant code: `lib/models/followed_team.dart`,
 `lib/services/followed_teams_repository.dart`,
@@ -260,12 +269,14 @@ repositories via `fake_cloud_firestore` (`test/firestore_event_repository_test.d
 tagging/override UI (`test/event_tags_tab_test.dart`).
 
 Sports Mode's tests use `fake_cloud_firestore` and fakes for the sports API
-client and followed-teams repository, and cover: TheSportsDB response mapping
-(UTC timestamp parsing, fallbacks, defaults), the sports adapter aggregating
-upcoming games across followed teams (including skipping malformed API
-entries), and the followed-teams repository (add/dedupe/remove, per-user
-scoping). The Cloud Function's own tests live in `../functions/test/` and run
-independently via `npm test` there — see `../functions/README.md`.
+client, followed-teams repository, and event repository, and cover:
+TheSportsDB response mapping (UTC timestamp parsing, fallbacks, defaults),
+the followed-teams repository (add/dedupe/remove, per-user scoping), and the
+dashboard's `nextGameForTeam` matching (earliest upcoming game, ignoring
+past/non-sports/other-team events) plus its no-API-call rendering. The
+backend pollers' own tests live in `../functions/test/` (`npm test` there)
+and `../scripts/sports_poller/` (`python -m pytest` there) — see their
+respective READMEs.
 
 Before testing was stopped at the user's request, analysis and widget tests passed,
 and the web build succeeded. Android compilation was blocked while downloading
