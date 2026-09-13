@@ -1,0 +1,32 @@
+name: Poll sports events
+
+# Runs the Python sports poller (scripts/sports_poller/) hourly, as a free
+# alternative to deploying functions/src/index.ts's pollSportsEvents as a
+# paid, 2nd-generation Firebase Cloud Function -- see
+# scripts/sports_poller/README.md for the full explanation and setup.
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: scripts/sports_poller
+        run: pip install -r requirements.txt
+
+      - name: Poll TheSportsDB and ingest upcoming games
+        working-directory: scripts/sports_poller
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: python poll_sports_events.py

@@ -32,6 +32,12 @@ before being returned, per the project's ingestion contract.
 
 ## `pollSportsEvents` (scheduled, every 6 hours)
 
+Deploying this needs the Blaze plan (see below) — until that's done,
+`../scripts/sports_poller/` is a Python script that does the identical job
+on an hourly GitHub Actions cron, with no Firebase billing change needed.
+See its README for setup. Don't run both against the same project at once
+(harmless since ingestion is idempotent, but redundant).
+
 For every user document under `users/{uid}`, reads their
 `followedTeams` subcollection; for every followed team, fetches upcoming
 games from [TheSportsDB](https://www.thesportsdb.com/api.php) and ingests

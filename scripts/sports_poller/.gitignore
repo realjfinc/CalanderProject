@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/
+
+# Never commit real Firebase service account credentials.
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
