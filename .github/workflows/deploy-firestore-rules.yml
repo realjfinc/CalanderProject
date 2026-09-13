@@ -1,0 +1,46 @@
+name: Deploy Firestore rules
+
+# Deploys firestore.rules to the live calander-1025b project whenever it
+# changes on main -- see DEPLOYMENT.md for one-time setup (the
+# FIREBASE_RULES_DEPLOY_SERVICE_ACCOUNT secret this needs).
+#
+# Deliberately never triggers on pull_request: a PR's code (including a
+# stranger's, on a public repo) must never run with access to a secret
+# that can rewrite this project's security rules. Only a push already on
+# main -- i.e. already reviewed and merged -- or an explicit manual run
+# can deploy.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "firestore.rules"
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write deploy credentials
+        run: printf '%s' "$SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-rules-deploy-key.json"
+        env:
+          SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_RULES_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Deploy Firestore rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-rules-deploy-key.json
+        run: firebase deploy --only firestore:rules --project calander-1025b --non-interactive
+
+      - name: Remove deploy credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-rules-deploy-key.json"
