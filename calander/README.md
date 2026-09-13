@@ -10,7 +10,7 @@ Light and dark themes follow the device setting. Inter is bundled locally with i
 - Unverified accounts stay on the verification screen, including restored sessions.
 - Verification refreshes manually or when the app returns to the foreground.
 - Password-reset links open Firebase's hosted reset page; return to the app to log in.
-- Verified accounts see a home screen with a "Manage Tags" entry point and a logout button.
+- Verified accounts see a home screen with "Manage Tags" and "Sports Mode" entry points and a logout button.
 - Google and Apple buttons are placeholders only.
 
 ## Firebase
@@ -21,7 +21,8 @@ Public app configuration is in `lib/firebase_configuration.dart`,
 `android/app/google-services.json`, and `ios/Runner/GoogleService-Info.plist`.
 These files contain app identifiers, not administrator credentials.
 
-Cloud Firestore is used for per-user data (currently: tags — see below).
+Cloud Firestore is used for per-user data (tags, events, and followed sports
+teams — see below).
 Firestore security rules live at the repo root: `../firestore.rules`, deployed
 with `firebase deploy --only firestore:rules` from the repo root.
 
@@ -38,6 +39,41 @@ Relevant code: `lib/models/event_tag.dart`, `lib/services/tag_repository.dart`,
 `lib/services/firestore_tag_repository.dart`, `lib/ui/tags/tag_management_screen.dart`.
 Tests use `fake_cloud_firestore` instead of a live backend
 (`test/firestore_tag_repository_test.dart`, `test/tag_management_screen_test.dart`).
+
+## Sports Mode (Step 7)
+
+Follow sports teams (via [TheSportsDB](https://www.thesportsdb.com/api.php)'s
+free public API — no account or API key needed) and get their upcoming games
+added to your calendar automatically. Followed teams are stored at
+`users/{uid}/followedTeams/{teamId}` (keyed by the team's own API id, so
+following the same team twice is a no-op). Open it from the home screen's
+"Sports Mode" button:
+
+- **Follow Teams** tab: search TheSportsDB by name, follow/unfollow.
+- **Dashboard** tab: see each followed team's next game, and a "Sync Upcoming
+  Games to Calendar" button that pulls every followed team's upcoming games
+  into your calendar on demand.
+
+Games are ingested as `source: "sports"`, `sourceId` = TheSportsDB's own event
+id, `tag: null` — same as every other source, sports games are only ever
+tagged by direct user action or Step 5's routing logic, never by this
+integration. Dedup and cross-source conflict detection reuse Step 6's shared
+`ingestProviderEvent`/`syncProvider` utilities as-is (`SportsAdapter`
+implements the same `ProviderAdapter` interface Step 6's Google/Outlook/
+iCloud adapters do) — no separate sports-specific dedup logic exists.
+
+A scheduled Cloud Function (`../functions/`, see its own README) polls every
+user's followed teams every 6 hours and ingests new games the same way, so
+games appear even if you never open the dashboard's sync button yourself.
+
+Relevant code: `lib/models/followed_team.dart`,
+`lib/services/followed_teams_repository.dart`,
+`lib/services/firestore_followed_teams_repository.dart`,
+`lib/services/thesportsdb_client.dart`, `lib/services/sports_adapter.dart`,
+`lib/ui/sports/`. Recreated shared infrastructure (since Step 6's PR hasn't
+merged yet): `lib/models/calendar_event.dart`, `lib/services/event_repository.dart`,
+`lib/services/firestore_event_repository.dart`, `lib/services/provider_adapter.dart`,
+`lib/services/event_sync.dart`, `lib/services/provider_sync.dart`.
 
 ## Run
 
@@ -67,6 +103,14 @@ logout, and narrow layouts with enlarged text. Preview renders are saved under
 in-memory repository fake, and cover default-tag initialization (including
 idempotency and non-resurrection of deleted defaults), add/edit/delete, and
 per-user scoping.
+
+Sports Mode's tests use `fake_cloud_firestore` and fakes for the sports API
+client and followed-teams repository, and cover: TheSportsDB response mapping
+(UTC timestamp parsing, fallbacks, defaults), the sports adapter aggregating
+upcoming games across followed teams (including skipping malformed API
+entries), and the followed-teams repository (add/dedupe/remove, per-user
+scoping). The Cloud Function's own tests live in `../functions/test/` and run
+independently via `npm test` there — see `../functions/README.md`.
 
 Before testing was stopped at the user's request, analysis and widget tests passed,
 and the web build succeeded. Android compilation was blocked while downloading
