@@ -109,17 +109,21 @@ String eventTime(
   bool withDate = false,
 }) {
   if (event.allDay) {
-    final last = DateTime(event.end.year, event.end.month, event.end.day - 1);
-    return sameDay(event.start, last)
-        ? (withDate ? '${dateLabel(event.start)} · All day' : 'All day')
-        : '${dateLabel(event.start)} – ${dateLabel(last)} · All day';
+    final last = DateTime(
+      event.localEnd.year,
+      event.localEnd.month,
+      event.localEnd.day - 1,
+    );
+    return sameDay(event.localStart, last)
+        ? (withDate ? '${dateLabel(event.localStart)} · All day' : 'All day')
+        : '${dateLabel(event.localStart)} – ${dateLabel(last)} · All day';
   }
-  final from = TimeOfDay.fromDateTime(event.start).format(context);
-  final to = TimeOfDay.fromDateTime(event.end).format(context);
-  if (!sameDay(event.start, event.end)) {
-    return '${dateLabel(event.start)}, $from – ${dateLabel(event.end)}, $to';
+  final from = TimeOfDay.fromDateTime(event.localStart).format(context);
+  final to = TimeOfDay.fromDateTime(event.localEnd).format(context);
+  if (!sameDay(event.localStart, event.localEnd)) {
+    return '${dateLabel(event.localStart)}, $from – ${dateLabel(event.localEnd)}, $to';
   }
-  return '${withDate ? '${dateLabel(event.start)} · ' : ''}$from – $to';
+  return '${withDate ? '${dateLabel(event.localStart)} · ' : ''}$from – $to';
 }
 
 class EventCard extends StatelessWidget {
@@ -160,7 +164,7 @@ class EventCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${eventTime(context, event, withDate: withDate)}${event.location.isEmpty ? '' : ' · ${event.location}'}',
+                  '${eventTime(context, event, withDate: withDate)}${(event.location ?? '').isEmpty ? '' : ' · ${event.location}'}',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 8),

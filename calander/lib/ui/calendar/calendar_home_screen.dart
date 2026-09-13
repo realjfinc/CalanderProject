@@ -11,6 +11,7 @@ import '../../services/firestore_event_repository.dart';
 import '../../services/firestore_tag_repository.dart';
 import '../../services/tag_repository.dart';
 import '../tags/tag_management_screen.dart';
+import '../sync/provider_sync_screen.dart';
 import 'calendar_widgets.dart';
 import 'event_editor_screen.dart';
 import 'event_detail_screen.dart';
@@ -25,7 +26,7 @@ class CalendarHomeScreen extends StatefulWidget {
     this.tags,
   });
   final AuthService auth;
-  final EventRepository? events;
+  final CalendarEventRepository? events;
   final TagRepository? tags;
   @override
   State<CalendarHomeScreen> createState() => _CalendarHomeScreenState();
@@ -33,7 +34,7 @@ class CalendarHomeScreen extends StatefulWidget {
 
 class _CalendarHomeScreenState extends State<CalendarHomeScreen> {
   final _navigator = GlobalKey<NavigatorState>();
-  late final EventRepository _events =
+  late final CalendarEventRepository _events =
       widget.events ?? FirestoreEventRepository(uid: widget.auth.account!.uid);
   late final TagRepository _tags =
       widget.tags ?? FirestoreTagRepository(uid: widget.auth.account!.uid);
@@ -60,7 +61,7 @@ class _CalendarDashboard extends StatefulWidget {
     required this.tags,
   });
   final AuthService auth;
-  final EventRepository events;
+  final CalendarEventRepository events;
   final TagRepository tags;
   @override
   State<_CalendarDashboard> createState() => _CalendarDashboardState();
@@ -79,7 +80,7 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
   @override
   void initState() {
     super.initState();
-    _eventStream = widget.events.watchEvents();
+    _eventStream = widget.events.watchSnapshots();
     _tagStream = widget.tags.watchTags();
     _initializeTags();
   }
@@ -176,8 +177,11 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
     } else if (value == 3) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) =>
-              _CalendarSettings(auth: widget.auth, tags: widget.tags),
+          builder: (_) => _CalendarSettings(
+            auth: widget.auth,
+            tags: widget.tags,
+            events: widget.events,
+          ),
         ),
       );
     } else {
@@ -197,7 +201,7 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
           ..sort(
             (a, b) => a.allDay != b.allDay
                 ? (a.allDay ? -1 : 1)
-                : a.start.compareTo(b.start),
+                : a.localStart.compareTo(b.localStart),
           );
         final weekStart = DateTime(
           _selected.year,
@@ -420,7 +424,7 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () => setState(
-                        () => _eventStream = widget.events.watchEvents(),
+                        () => _eventStream = widget.events.watchSnapshots(),
                       ),
                       child: const Text('Try again'),
                     ),
@@ -726,16 +730,16 @@ class _WeekGrid extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final items = events.where((e) => e.occursOn(day)).toList();
     final timed = items.where((e) => !e.allDay).toList()
-      ..sort((a, b) => a.start.compareTo(b.start));
+      ..sort((a, b) => a.localStart.compareTo(b.localStart));
     final laneEnds = <DateTime>[];
     final lanes = <String, int>{};
     for (final event in timed) {
-      var lane = laneEnds.indexWhere((end) => !end.isAfter(event.start));
+      var lane = laneEnds.indexWhere((end) => !end.isAfter(event.localStart));
       if (lane == -1) {
         lane = laneEnds.length;
-        laneEnds.add(event.end);
+        laneEnds.add(event.localEnd);
       } else {
-        laneEnds[lane] = event.end;
+        laneEnds[lane] = event.localEnd;
       }
       lanes[event.id] = lane;
     }
@@ -806,12 +810,12 @@ class _WeekGrid extends StatelessWidget {
                   ),
                 for (final event in timed)
                   Positioned(
-                    top: minute(event.start) / 5,
+                    top: minute(event.localStart) / 5,
                     height: math.min(
-                      288 - minute(event.start) / 5,
+                      288 - minute(event.localStart) / 5,
                       math.max(
                         8.0,
-                        (minute(event.end) - minute(event.start)) / 5,
+                        (minute(event.localEnd) - minute(event.localStart)) / 5,
                       ),
                     ),
                     left:
@@ -857,7 +861,12 @@ class _WeekGrid extends StatelessWidget {
 }
 
 class _CalendarSettings extends StatefulWidget {
-  const _CalendarSettings({required this.auth, required this.tags});
+  const _CalendarSettings({
+    required this.auth,
+    required this.tags,
+    required this.events,
+  });
+  final CalendarEventRepository events;
   final AuthService auth;
   final TagRepository tags;
   @override
@@ -915,6 +924,22 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
             context,
             MaterialPageRoute(
               builder: (_) => TagManagementScreen(repository: widget.tags),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      CalendarPanel(
+        padding: 0,
+        child: ListTile(
+          title: const Text('Provider Sync'),
+          subtitle: const Text('Connect calendars and resolve conflicts'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  ProviderSyncScreen(eventRepository: widget.events),
             ),
           ),
         ),

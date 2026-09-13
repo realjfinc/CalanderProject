@@ -18,7 +18,7 @@ class CalanderApp extends StatelessWidget {
   });
   final AuthService auth;
   final ThemeMode themeMode;
-  final EventRepository? events;
+  final CalendarEventRepository? events;
   final TagRepository? tags;
   @override
   Widget build(BuildContext context) => MaterialApp(

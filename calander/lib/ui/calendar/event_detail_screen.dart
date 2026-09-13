@@ -15,14 +15,14 @@ class EventDetailScreen extends StatefulWidget {
     required this.tags,
   });
   final String eventId;
-  final EventRepository events;
+  final CalendarEventRepository events;
   final TagRepository tags;
   @override
   State<EventDetailScreen> createState() => _EventDetailScreenState();
 }
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
-  late final Stream<EventSnapshot> _events = widget.events.watchEvents();
+  late final Stream<EventSnapshot> _events = widget.events.watchSnapshots();
   late final Stream<List<EventTag>> _tags = widget.tags.watchTags();
   bool _deleting = false;
   String? _error;
@@ -111,14 +111,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               const SizedBox(height: 16),
               _row(
                 'Location',
-                current.location.isEmpty ? 'No location' : current.location,
+                (current.location ?? '').isEmpty
+                    ? 'No location'
+                    : current.location!,
               ),
               _row(
                 'Tag',
                 tag?.name ?? (current.tagId == null ? 'No tag' : 'Deleted tag'),
               ),
               _row('Importance', current.flexible ? 'Flexible' : 'Fixed'),
-              if (current.notes.isNotEmpty) _row('Notes', current.notes),
+              if ((current.notes ?? '').isNotEmpty)
+                _row('Notes', current.notes!),
               _row('Visibility', 'Only you'),
               const SizedBox(height: 12),
               FilledButton(
@@ -130,7 +133,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           builder: (_) => EventEditorScreen(
                             events: widget.events,
                             tags: widget.tags,
-                            initialDate: current.start,
+                            initialDate: current.localStart,
                             existing: current,
                           ),
                         ),

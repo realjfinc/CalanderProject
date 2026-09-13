@@ -16,7 +16,7 @@ class EventEditorScreen extends StatefulWidget {
     required this.initialDate,
     this.existing,
   });
-  final EventRepository events;
+  final CalendarEventRepository events;
   final TagRepository tags;
   final DateTime initialDate;
   final CalendarEvent? existing;
@@ -52,14 +52,14 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
     _location = TextEditingController(text: event?.location ?? '');
     _notes = TextEditingController(text: event?.notes ?? '');
     _start =
-        event?.start ??
+        event?.localStart ??
         DateTime(
           widget.initialDate.year,
           widget.initialDate.month,
           widget.initialDate.day,
           9,
         );
-    _end = event?.end ?? _start.add(const Duration(hours: 1));
+    _end = event?.localEnd ?? _start.add(const Duration(hours: 1));
     _allDay = event?.allDay ?? false;
     _flexible = event?.flexible ?? false;
     _tagId = event?.tagId;
@@ -203,20 +203,30 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
       if (mounted) setState(() => _slow = true);
     });
     try {
-      await widget.events.save(
-        CalendarEvent(
-          id: _id,
-          title: _title.text,
-          start: _start,
-          end: _end,
-          location: _location.text,
-          notes: _notes.text,
-          tagId: _tagId,
-          allDay: _allDay,
-          flexible: _flexible,
-        ),
-        isNew: widget.existing == null,
-      );
+      DateTime stored(DateTime date) => _allDay
+          ? DateTime.utc(date.year, date.month, date.day)
+          : date.toUtc();
+      final event =
+          (widget.existing ??
+                  CalendarEvent(
+                    id: _id,
+                    title: _title.text,
+                    start: stored(_start),
+                    end: stored(_end),
+                  ))
+              .copyWith(
+                title: _title.text,
+                start: stored(_start),
+                end: stored(_end),
+                location: _location.text,
+                notes: _notes.text,
+                tag: _tagId,
+                allDay: _allDay,
+                importance: _flexible
+                    ? EventImportance.flexible
+                    : EventImportance.locked,
+              );
+      await widget.events.save(event, isNew: widget.existing == null);
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (mounted) {
