@@ -34,7 +34,6 @@ class SportsModeScreen extends StatelessWidget {
           children: [
             DashboardTab(
               followedTeamsRepository: followedTeamsRepository,
-              apiClient: apiClient,
               eventRepository: eventRepository,
             ),
             FollowTeamTab(repository: followedTeamsRepository, apiClient: apiClient),

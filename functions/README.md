@@ -8,8 +8,9 @@ Two independent functions live here:
   user's confirmation and the actual save both happen client-side.
 - `pollSportsEvents` (Step 7): a scheduled function that keeps every
   user's calendar up to date with their followed sports teams' upcoming
-  games, without requiring them to open the app and tap "Sync Now" (the
-  client-side equivalent, in `lib/ui/sports/dashboard_tab.dart`).
+  games. The client never calls TheSportsDB to sync games itself (see
+  `lib/ui/sports/dashboard_tab.dart`) — this function, or its Python
+  equivalent in `../scripts/sports_poller/`, is the only thing that does.
 
 ## `extractEvent` (callable)
 
