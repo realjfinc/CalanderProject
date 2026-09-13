@@ -188,10 +188,11 @@ void main() {
       expect(find.byType(CalendarHomeScreen), findsOneWidget);
       await tapText(tester, 'Settings');
       // Step 1 added "Manage Tags"; Step 3 added "Add Event from Upload";
-      // Step 5 added "Tag Routing".
+      // Step 5 added "Tag Routing"; Step 7 added "Sports Mode".
       expect(find.text('Manage Tags'), findsOneWidget);
       expect(find.text('Add Event from Upload'), findsOneWidget);
       expect(find.text('Tag Routing'), findsOneWidget);
+      expect(find.text('Sports Mode'), findsOneWidget);
       expect(find.text('Welcome'), findsNothing);
       await tapText(tester, 'Log out');
       expect(find.text('Welcome'), findsOneWidget);

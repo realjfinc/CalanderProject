@@ -13,7 +13,9 @@ import '../../services/tag_repository.dart';
 import '../../services/cloud_function_extraction_service.dart';
 import '../../services/upload_storage.dart';
 import '../../services/firestore_tag_routing_repository.dart';
+import '../../services/firestore_followed_teams_repository.dart';
 import '../extraction/upload_event_screen.dart';
+import '../sports/sports_mode_screen.dart';
 import '../tags/tag_management_screen.dart';
 import '../tags/tag_routing_screen.dart';
 import '../sync/provider_sync_screen.dart';
@@ -983,6 +985,24 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
             MaterialPageRoute(
               builder: (_) =>
                   ProviderSyncScreen(eventRepository: widget.events),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      CalendarPanel(
+        padding: 0,
+        child: ListTile(
+          title: const Text('Sports Mode'),
+          subtitle: const Text('Follow teams and sync their upcoming games'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SportsModeScreen(
+                followedTeamsRepository: FirestoreFollowedTeamsRepository(uid: widget.auth.account!.uid),
+                eventRepository: widget.events,
+              ),
             ),
           ),
         ),

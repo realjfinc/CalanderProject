@@ -17,6 +17,15 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
+      // Per-user followed sports teams (Step 7).
+      match /followedTeams/{teamId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Events synced from followed sports teams (Step 7) go through this
+      // same schema-validated rule -- the scheduled polling function
+      // writes via the Admin SDK, which bypasses these rules entirely, and
+      // `sports` is already an allowed `source` value below.
       match /events/{eventId} {
         function owner() {
           return request.auth != null && request.auth.uid == userId

@@ -1,0 +1,103 @@
+import 'package:flutter/material.dart';
+
+import '../../models/followed_team.dart';
+import '../../services/followed_teams_repository.dart';
+import '../../services/thesportsdb_client.dart';
+
+/// Search for a team and follow/unfollow it.
+class FollowTeamTab extends StatefulWidget {
+  const FollowTeamTab({super.key, required this.repository, required this.apiClient});
+
+  final FollowedTeamsRepository repository;
+  final TheSportsDbClient apiClient;
+
+  @override
+  State<FollowTeamTab> createState() => _FollowTeamTabState();
+}
+
+class _FollowTeamTabState extends State<FollowTeamTab> {
+  final _queryController = TextEditingController();
+  List<FollowedTeam>? _results;
+  bool _searching = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search() async {
+    final query = _queryController.text.trim();
+    if (query.isEmpty) return;
+    setState(() {
+      _searching = true;
+      _error = null;
+    });
+    try {
+      final results = await widget.apiClient.searchTeams(query);
+      setState(() => _results = results);
+    } catch (error) {
+      setState(() => _error = 'Search failed: $error');
+    } finally {
+      setState(() => _searching = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<FollowedTeam>>(
+      stream: widget.repository.watchFollowedTeams(),
+      builder: (context, followedSnapshot) {
+        final followedIds = (followedSnapshot.data ?? const []).map((t) => t.id).toSet();
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _queryController,
+                      decoration: const InputDecoration(labelText: 'Search for a team'),
+                      onSubmitted: (_) => _search(),
+                    ),
+                  ),
+                  IconButton(
+                    icon: _searching
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator())
+                        : const Icon(Icons.search),
+                    onPressed: _searching ? null : _search,
+                  ),
+                ],
+              ),
+            ),
+            if (_error != null) Padding(padding: const EdgeInsets.all(8), child: Text(_error!)),
+            Expanded(
+              child: ListView(
+                children: [
+                  if (_results != null)
+                    for (final team in _results!)
+                      ListTile(
+                        title: Text(team.name),
+                        subtitle: Text(team.league),
+                        trailing: followedIds.contains(team.id)
+                            ? OutlinedButton(
+                                onPressed: () => widget.repository.unfollowTeam(team.id),
+                                child: const Text('Unfollow'),
+                              )
+                            : ElevatedButton(
+                                onPressed: () => widget.repository.followTeam(team),
+                                child: const Text('Follow'),
+                              ),
+                      ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
