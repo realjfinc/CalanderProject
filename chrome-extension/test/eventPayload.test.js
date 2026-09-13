@@ -29,6 +29,23 @@ test("buildScreenshotEvent always sets source=screenshot, sourceId=null, tag=nul
   assert.deepEqual(event.attachments, ["https://example.com/screenshot.png"]);
 });
 
+test("buildScreenshotEvent mirrors the canonical fields into the dashboard's own field names", () => {
+  const event = buildScreenshotEvent({
+    title: "Fundraiser",
+    startUtc: "2026-05-01T18:00:00.000Z",
+    endUtc: "2026-05-01T19:00:00.000Z",
+  });
+
+  // The shared firestore.rules schema requires both field pairs to be
+  // present and consistent on every event write, screenshot-sourced ones
+  // included -- see the doc comment on buildScreenshotEvent.
+  assert.equal(event.startAt, event.start);
+  assert.equal(event.endAt, event.end);
+  assert.equal(event.allDay, false);
+  assert.equal(event.tagId, event.tag);
+  assert.equal(event.flexible, event.importance === "flexible");
+});
+
 test("buildScreenshotEvent defaults a blank title and normalizes blank fields to null", () => {
   const event = buildScreenshotEvent({
     title: "   ",

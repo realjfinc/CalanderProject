@@ -42,6 +42,15 @@ there too.
    (`users/{uid}/events`) with `source: "screenshot"`, `sourceId: null`,
    `tag: null`. Nothing is saved before this step.
 
+The write goes through the client SDK (not a Cloud Function), so it's
+subject to the live `firestore.rules` schema validation the calendar
+dashboard's own event writes share. That schema requires both the
+dashboard's own field names (`startAt`/`endAt`/`allDay`/`flexible`/`tagId`)
+and the canonical ones (`start`/`end`/`tag`) on every event document, kept
+consistent — `buildScreenshotEvent` mirrors both pairs, and `popup.js` adds
+`createdAt`/`updatedAt` as Firestore server timestamps at write time (the
+one thing the framework-agnostic `eventPayload.js` can't produce itself).
+
 ## Code layout
 
 - `src/eventPayload.js` — pure: builds the extraction request and the final

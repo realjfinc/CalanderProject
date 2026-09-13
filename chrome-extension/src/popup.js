@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { getFirestore, collection, addDoc, Timestamp } from "firebase/firestore";
+import { getFirestore, collection, addDoc, Timestamp, serverTimestamp } from "firebase/firestore";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 
 import { firebaseConfig } from "./firebaseConfig.js";
@@ -109,10 +109,18 @@ confirmForm.addEventListener("submit", async (event) => {
       attachmentUrl,
     });
 
+    const start = Timestamp.fromDate(new Date(eventFields.start));
+    const end = Timestamp.fromDate(new Date(eventFields.end));
     await addDoc(collection(db, "users", user.uid, "events"), {
       ...eventFields,
-      start: Timestamp.fromDate(new Date(eventFields.start)),
-      end: Timestamp.fromDate(new Date(eventFields.end)),
+      start,
+      end,
+      // The dashboard's own field names, kept equal to their canonical
+      // counterparts as the shared firestore.rules schema requires.
+      startAt: start,
+      endAt: end,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
 
     statusText.textContent = "Saved!";

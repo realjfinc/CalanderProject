@@ -21,6 +21,15 @@ export function buildExtractionRequest({ base64, mimeType, timezone }) {
  * are always null (only direct user action or Step 5's routing logic may
  * ever set tag) — this function does not accept overrides for any of those
  * three fields.
+ *
+ * Also includes the calendar dashboard's own field names (`startAt`/`endAt`/
+ * `allDay`/`flexible`/`tagId`) alongside the canonical ones (`start`/`end`/
+ * `tag`), mirroring the same values — the live `firestore.rules` schema
+ * (shared with the dashboard's own event writes) requires both field pairs
+ * to be present and consistent on every event document, screenshot-sourced
+ * ones included. `createdAt`/`updatedAt` still need to be added by the
+ * caller as Firestore server timestamps, which this framework-agnostic
+ * function can't produce.
  */
 export function buildScreenshotEvent({ title, location, startUtc, endUtc, notes, attachmentUrl }) {
   if (!startUtc || !endUtc) {
@@ -31,11 +40,16 @@ export function buildScreenshotEvent({ title, location, startUtc, endUtc, notes,
     location: location && location.trim() ? location.trim() : null,
     start: startUtc,
     end: endUtc,
+    startAt: startUtc,
+    endAt: endUtc,
+    allDay: false,
     source: "screenshot",
     sourceId: null,
     status: "active",
     tag: null,
+    tagId: null,
     importance: "flexible",
+    flexible: true,
     notes: notes && notes.trim() ? notes.trim() : null,
     attachments: attachmentUrl ? [attachmentUrl] : null,
     repeat: null,
