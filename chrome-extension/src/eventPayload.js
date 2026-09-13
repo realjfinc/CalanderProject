@@ -30,6 +30,14 @@ export function buildExtractionRequest({ base64, mimeType, timezone }) {
  * ones included. `createdAt`/`updatedAt` still need to be added by the
  * caller as Firestore server timestamps, which this framework-agnostic
  * function can't produce.
+ *
+ * `location` and `notes` are always strings, never `null`: unlike the
+ * schema's other optional fields (`sourceId`, `tagId`, `attachments`, ...),
+ * `validEvent()` requires `event.location is string` and `event.notes is
+ * string` unconditionally, so a blank field must become `""`, not `null`
+ * (Firestore rules' `is string` check fails on `null`) -- the same
+ * convention `CalendarEvent.toMap()` already uses (`location ?? ''`,
+ * `notes ?? ''`) on the Flutter side.
  */
 export function buildScreenshotEvent({ title, location, startUtc, endUtc, notes, attachmentUrl }) {
   if (!startUtc || !endUtc) {
@@ -37,7 +45,7 @@ export function buildScreenshotEvent({ title, location, startUtc, endUtc, notes,
   }
   return {
     title: title && title.trim() ? title.trim() : "Untitled event",
-    location: location && location.trim() ? location.trim() : null,
+    location: location && location.trim() ? location.trim() : "",
     start: startUtc,
     end: endUtc,
     startAt: startUtc,
@@ -50,7 +58,7 @@ export function buildScreenshotEvent({ title, location, startUtc, endUtc, notes,
     tagId: null,
     importance: "flexible",
     flexible: true,
-    notes: notes && notes.trim() ? notes.trim() : null,
+    notes: notes && notes.trim() ? notes.trim() : "",
     attachments: attachmentUrl ? [attachmentUrl] : null,
     repeat: null,
     reminders: null,

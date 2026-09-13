@@ -46,7 +46,7 @@ test("buildScreenshotEvent mirrors the canonical fields into the dashboard's own
   assert.equal(event.flexible, event.importance === "flexible");
 });
 
-test("buildScreenshotEvent defaults a blank title and normalizes blank fields to null", () => {
+test("buildScreenshotEvent defaults a blank title and normalizes blank location/notes to empty strings", () => {
   const event = buildScreenshotEvent({
     title: "   ",
     location: "",
@@ -57,8 +57,10 @@ test("buildScreenshotEvent defaults a blank title and normalizes blank fields to
   });
 
   assert.equal(event.title, "Untitled event");
-  assert.equal(event.location, null);
-  assert.equal(event.notes, null);
+  // Unlike sourceId/tagId/attachments, firestore.rules requires location and
+  // notes to always be strings ("" when blank), never null.
+  assert.equal(event.location, "");
+  assert.equal(event.notes, "");
   assert.equal(event.attachments, null);
 });
 
