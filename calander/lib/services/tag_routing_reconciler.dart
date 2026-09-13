@@ -54,7 +54,7 @@ class TagRoutingReconciler {
       if (event.status != EventStatus.active) continue;
       final matchedTag = resolveAutoTag(event, _latestSettings);
       if (matchedTag != null) {
-        unawaited(_events.setEventTag(event.id, matchedTag));
+        unawaited(_events.updateEvent(event.copyWith(tag: matchedTag)));
       }
     }
   }

@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Uploaded source files for extracted events (Step 3's file uploads,
+    // Step 4's screenshot captures). Only the owning, authenticated user
+    // may read or write their own uploads.
+    match /users/{userId}/uploads/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Default deny for everything else.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

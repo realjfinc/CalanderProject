@@ -34,20 +34,25 @@ class _FakeEventRepository implements EventRepository {
   }
 
   @override
-  Future<void> setEventTag(String eventId, String? tag) async {
-    setTagCalls.add((eventId, tag));
-    final existing = _events[eventId]!;
-    _events[eventId] = CalendarEvent(
-      id: existing.id,
-      title: existing.title,
-      location: existing.location,
-      notes: existing.notes,
-      start: existing.start,
-      end: existing.end,
-      source: existing.source,
-      status: existing.status,
-      tag: tag,
-    );
+  Future<String> addEvent(CalendarEvent event) async {
+    _events[event.id] = event;
+    _emit();
+    return event.id;
+  }
+
+  @override
+  Future<void> updateEvent(CalendarEvent event) async {
+    final existing = _events[event.id];
+    if (existing != null && existing.tag != event.tag) {
+      setTagCalls.add((event.id, event.tag));
+    }
+    _events[event.id] = event;
+    _emit();
+  }
+
+  @override
+  Future<void> deleteEvent(String eventId) async {
+    _events.remove(eventId);
     _emit();
   }
 }

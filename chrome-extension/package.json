@@ -1,0 +1,17 @@
+{
+  "name": "calander-chrome-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Manifest V3 extension: capture the current tab, extract a calendar event via the same pipeline as Step 3, save it to the signed-in user's Calander account.",
+  "scripts": {
+    "build": "esbuild src/popup.js --bundle --outfile=dist/popup.bundle.js --format=iife --target=chrome110",
+    "test": "node --test test/**/*.test.js"
+  },
+  "dependencies": {
+    "firebase": "^11.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

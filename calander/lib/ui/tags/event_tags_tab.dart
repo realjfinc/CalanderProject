@@ -37,7 +37,7 @@ class EventTagsTab extends StatelessWidget {
       ),
     );
     if (selected != null) {
-      await eventRepository.setEventTag(event.id, selected.tagId);
+      await eventRepository.updateEvent(event.copyWith(tag: selected.tagId));
     }
   }
 

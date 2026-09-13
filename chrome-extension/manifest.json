@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Calander Screenshot Capture",
+  "version": "1.0.0",
+  "description": "Capture the current tab and extract a calendar event from it, using the same account and extraction pipeline as the Calander app.",
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Add event from screenshot"
+  },
+  "permissions": ["activeTab", "tabs"],
+  "host_permissions": [
+    "https://*.googleapis.com/*",
+    "https://*.cloudfunctions.net/*",
+    "https://*.firebaseapp.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
