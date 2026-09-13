@@ -25,10 +25,18 @@ both. Don't reuse one for the other.
      for the `calander-1025b` project.
    - **Create service account** — name it something like
      `firestore-rules-deploy` so its purpose is obvious later.
-   - Grant it exactly one role: **Firebase Rules Admin**
-     (`roles/firebaserules.admin`). That's enough to deploy rules; it
-     cannot read or write any Firestore document, storage object, or
-     Cloud Function.
+   - Grant it **two** roles:
+     - **Firebase Rules Admin** (`roles/firebaserules.admin`) — this is
+       what actually deploys the rules; it cannot read or write any
+       Firestore document, storage object, or Cloud Function.
+     - **Service Usage Viewer** (`roles/serviceusage.serviceUsageViewer`)
+       — before every deploy, the Firebase CLI checks whether the
+       project's APIs (e.g. `firestore.googleapis.com`) are enabled,
+       which needs `serviceusage.services.get`. Firebase Rules Admin
+       alone doesn't grant that, and the deploy fails with `403
+       Permission denied to get service [firestore.googleapis.com]`
+       without it. Service Usage Viewer is read-only — it can't enable,
+       disable, or change anything, only check status.
 
 2. **Generate a key** for that service account:
    - On the service account's page → **Keys** tab → **Add key** → **Create
