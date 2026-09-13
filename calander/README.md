@@ -28,7 +28,9 @@ Cloud Firestore stores per-user events, tags, and followed sports teams. The
 default Standard database is provisioned in `northamerica-northeast2`
 (Toronto). The owner-only rules in this repository include the previously
 published calendar rules plus the provider fields reconciled in this merge.
-The updated rules still need deployment.
+See `../DEPLOYMENT.md` for how `firestore.rules` gets deployed (by hand, or
+automatically via GitHub Actions once set up) — a change to that file in
+this repo has no live effect until it's actually deployed.
 Firestore security rules live at the repo root: `../firestore.rules`, deployed
 with `firebase deploy --only firestore:rules` from the repo root.
 
