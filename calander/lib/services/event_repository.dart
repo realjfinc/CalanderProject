@@ -23,3 +23,22 @@ abstract class EventRepository {
   /// conflict the user didn't choose to keep (see `conflict_resolver.dart`).
   Future<void> deleteEvent(String eventId);
 }
+
+class EventSnapshot {
+  const EventSnapshot(
+    this.events, {
+    this.fromCache = false,
+    this.pending = false,
+  });
+  final List<CalendarEvent> events;
+  final bool fromCache;
+  final bool pending;
+}
+
+/// Calendar editing and sync metadata, in addition to the provider contract.
+abstract class CalendarEventRepository implements EventRepository {
+  Stream<EventSnapshot> watchSnapshots();
+  String newId();
+  Future<void> save(CalendarEvent event, {required bool isNew});
+  Future<void> delete(String id);
+}

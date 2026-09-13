@@ -11,7 +11,14 @@ enum EventStatus { active, pendingConflict }
 
 enum EventImportance { locked, flexible }
 
-enum ReminderOffset { fiveMinutes, tenMinutes, fifteenMinutes, thirtyMinutes, oneHour, oneDay }
+enum ReminderOffset {
+  fiveMinutes,
+  tenMinutes,
+  fifteenMinutes,
+  thirtyMinutes,
+  oneHour,
+  oneDay,
+}
 
 extension ReminderOffsetDuration on ReminderOffset {
   Duration get duration => switch (this) {
@@ -31,7 +38,8 @@ class CalendarEvent {
     this.location,
     required this.start,
     required this.end,
-    required this.source,
+    this.source = EventSource.manual,
+    this.allDay = false,
     this.sourceId,
     this.status = EventStatus.active,
     this.tag,
@@ -52,7 +60,22 @@ class CalendarEvent {
   final DateTime start;
   final DateTime end;
 
+  final bool allDay;
   final EventSource source;
+  String? get tagId => tag;
+  bool get flexible => importance == EventImportance.flexible;
+  DateTime get localStart => _displayDate(start);
+  DateTime get localEnd => _displayDate(end);
+  DateTime _displayDate(DateTime value) {
+    if (!allDay) return value.toLocal();
+    final utc = value.toUtc();
+    return DateTime(utc.year, utc.month, utc.day);
+  }
+
+  bool occursOn(DateTime day) =>
+      localStart.isBefore(DateTime(day.year, day.month, day.day + 1)) &&
+      localEnd.isAfter(dateOnly(day));
+
   final String? sourceId;
   final EventStatus status;
   final String? tag;
@@ -77,14 +100,17 @@ class CalendarEvent {
   final String? conflictRole;
 
   factory CalendarEvent.fromMap(String id, Map<String, dynamic> map) {
-    final startTs = map['start'];
-    final endTs = map['end'];
+    final startTs = map['start'] ?? map['startAt'];
+    final endTs = map['end'] ?? map['endAt'];
     return CalendarEvent(
       id: id,
       title: map['title'] as String? ?? '',
       location: map['location'] as String?,
-      start: startTs is Timestamp ? startTs.toDate().toUtc() : DateTime.now().toUtc(),
+      start: startTs is Timestamp
+          ? startTs.toDate().toUtc()
+          : DateTime.now().toUtc(),
       end: endTs is Timestamp ? endTs.toDate().toUtc() : DateTime.now().toUtc(),
+      allDay: map['allDay'] as bool? ?? false,
       source: EventSource.values.firstWhere(
         (s) => s.name == map['source'],
         orElse: () => EventSource.manual,
@@ -93,8 +119,10 @@ class CalendarEvent {
       status: (map['status'] as String?) == 'pendingConflict'
           ? EventStatus.pendingConflict
           : EventStatus.active,
-      tag: map['tag'] as String?,
-      importance: (map['importance'] as String?) == 'locked'
+      tag: (map['tag'] ?? map['tagId']) as String?,
+      importance:
+          (map['importance'] as String?) == 'locked' ||
+              (map['importance'] == null && map['flexible'] == false)
           ? EventImportance.locked
           : EventImportance.flexible,
       notes: map['notes'] as String?,
@@ -111,15 +139,25 @@ class CalendarEvent {
   Map<String, dynamic> toMap() {
     return {
       'title': title,
-      'location': location,
+      'startAt': Timestamp.fromDate(start.toUtc()),
+      'endAt': Timestamp.fromDate(end.toUtc()),
+      'allDay': allDay,
+      'tagId': tag,
+      'flexible': flexible,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'location': location ?? '',
       'start': Timestamp.fromDate(start.toUtc()),
       'end': Timestamp.fromDate(end.toUtc()),
       'source': source.name,
       'sourceId': sourceId,
-      'status': status == EventStatus.pendingConflict ? 'pendingConflict' : 'active',
+      'status': status == EventStatus.pendingConflict
+          ? 'pendingConflict'
+          : 'active',
       'tag': tag,
-      'importance': importance == EventImportance.locked ? 'locked' : 'flexible',
-      'notes': notes,
+      'importance': importance == EventImportance.locked
+          ? 'locked'
+          : 'flexible',
+      'notes': notes ?? '',
       'attachments': attachments,
       'repeat': repeat,
       'reminders': reminders?.map((r) => r.name).toList(),
@@ -135,6 +173,7 @@ class CalendarEvent {
     DateTime? start,
     DateTime? end,
     EventSource? source,
+    bool? allDay,
     Object? sourceId = _unset,
     EventStatus? status,
     Object? tag = _unset,
@@ -149,21 +188,35 @@ class CalendarEvent {
     return CalendarEvent(
       id: id ?? this.id,
       title: title ?? this.title,
-      location: identical(location, _unset) ? this.location : location as String?,
+      location: identical(location, _unset)
+          ? this.location
+          : location as String?,
       start: start ?? this.start,
       end: end ?? this.end,
       source: source ?? this.source,
-      sourceId: identical(sourceId, _unset) ? this.sourceId : sourceId as String?,
+      allDay: allDay ?? this.allDay,
+      sourceId: identical(sourceId, _unset)
+          ? this.sourceId
+          : sourceId as String?,
       status: status ?? this.status,
       tag: identical(tag, _unset) ? this.tag : tag as String?,
       importance: importance ?? this.importance,
       notes: identical(notes, _unset) ? this.notes : notes as String?,
-      attachments: identical(attachments, _unset) ? this.attachments : attachments as List<String>?,
-      repeat: identical(repeat, _unset) ? this.repeat : repeat as Map<String, dynamic>?,
-      reminders: identical(reminders, _unset) ? this.reminders : reminders as List<ReminderOffset>?,
-      conflictGroupId:
-          identical(conflictGroupId, _unset) ? this.conflictGroupId : conflictGroupId as String?,
-      conflictRole: identical(conflictRole, _unset) ? this.conflictRole : conflictRole as String?,
+      attachments: identical(attachments, _unset)
+          ? this.attachments
+          : attachments as List<String>?,
+      repeat: identical(repeat, _unset)
+          ? this.repeat
+          : repeat as Map<String, dynamic>?,
+      reminders: identical(reminders, _unset)
+          ? this.reminders
+          : reminders as List<ReminderOffset>?,
+      conflictGroupId: identical(conflictGroupId, _unset)
+          ? this.conflictGroupId
+          : conflictGroupId as String?,
+      conflictRole: identical(conflictRole, _unset)
+          ? this.conflictRole
+          : conflictRole as String?,
     );
   }
 }
@@ -171,3 +224,36 @@ class CalendarEvent {
 /// Sentinel so [CalendarEvent.copyWith] can tell "not passed" apart from
 /// "explicitly passed null" for nullable fields.
 const _unset = Object();
+
+DateTime dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
+bool sameDay(DateTime a, DateTime b) => dateOnly(a) == dateOnly(b);
+
+const monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+const weekdayNames = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+String monthLabel(DateTime day) => '${monthNames[day.month - 1]} ${day.year}';
+String dateLabel(DateTime day) =>
+    '${monthNames[day.month - 1]} ${day.day}, ${day.year}';
+String dayLabel(DateTime day) =>
+    '${weekdayNames[day.weekday - 1]}, ${monthNames[day.month - 1]} ${day.day}';

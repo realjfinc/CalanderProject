@@ -26,6 +26,24 @@ ThemeData calanderTheme(Brightness brightness) {
   );
   return base.copyWith(
     scaffoldBackgroundColor: background,
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: surface,
+      indicatorColor: scheme.primaryContainer,
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: states.contains(WidgetState.selected) ? scheme.primary : muted,
+        ),
+      ),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          size: 22,
+          color: states.contains(WidgetState.selected) ? scheme.primary : muted,
+        ),
+      ),
+    ),
     textTheme: base.textTheme
         .copyWith(
           headlineLarge: TextStyle(

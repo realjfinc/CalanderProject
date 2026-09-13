@@ -1,6 +1,6 @@
 # Calander
 
-Mobile-first Flutter account screens based on `../design/CalanderProject.png`.
+Mobile-first Flutter calendar and account screens based on `../design/CalanderProject.png`.
 Light and dark themes follow the device setting. Inter is bundled locally with its license.
 
 ## Included
@@ -10,7 +10,9 @@ Light and dark themes follow the device setting. Inter is bundled locally with i
 - Unverified accounts stay on the verification screen, including restored sessions.
 - Verification refreshes manually or when the app returns to the foreground.
 - Password-reset links open Firebase's hosted reset page; return to the app to log in.
-- Verified accounts see a home screen with "Manage Tags", "Provider Sync", and a logout button.
+- Verified accounts open their calendar: Month, Week, Day, Search, and event details.
+- Create, edit, and delete private events with all-day/multi-day support, location, notes, tags, and Fixed/Flexible importance.
+- Tags and Settings are accessible from the bottom navigation; logout is in Settings.
 - Google and Apple buttons are placeholders only.
 
 ## Firebase
@@ -21,7 +23,10 @@ Public app configuration is in `lib/firebase_configuration.dart`,
 `android/app/google-services.json`, and `ios/Runner/GoogleService-Info.plist`.
 These files contain app identifiers, not administrator credentials.
 
-Cloud Firestore is used for per-user data (currently: tags — see below).
+Cloud Firestore stores per-user events and tags. The default Standard database is
+provisioned in `northamerica-northeast2` (Toronto). The owner-only rules in this
+repository include the previously published calendar rules plus the provider
+fields reconciled in this merge. The updated rules still need deployment.
 Firestore security rules live at the repo root: `../firestore.rules`, deployed
 with `firebase deploy --only firestore:rules` from the repo root.
 
@@ -32,7 +37,7 @@ Firebase Auth user (`../firestore.rules` restricts access to the owning user).
 A fresh account gets three default tags (Work/Personal/School) created once,
 via a persisted `users/{uid}/meta/tagInit` marker — idempotent, so deleting a
 default tag never brings it back on a later launch. Manage them from the home
-screen's "Manage Tags" button: add, rename/recolor, and delete.
+screen's Tags tab or Settings > Manage Tags: add, rename/recolor, and delete.
 
 Relevant code: `lib/models/event_tag.dart`, `lib/services/tag_repository.dart`,
 `lib/services/firestore_tag_repository.dart`, `lib/ui/tags/tag_management_screen.dart`.
@@ -41,7 +46,7 @@ Tests use `fake_cloud_firestore` instead of a live backend
 
 ## Provider Sync (Step 6)
 
-The home screen's "Provider Sync" button opens two tabs:
+Settings > Provider Sync opens two tabs:
 
 - **Connected Accounts**: sync from Google Calendar, Outlook, or iCloud.
   iCloud is fully functional as-is (CalDAV over HTTP Basic auth with an
@@ -134,3 +139,54 @@ and the web build succeeded. Android compilation was blocked while downloading
 Gradle by the local Java certificate configuration. iOS has not been built.
 A complete signup, verification-email, reset-email, and login cycle remains for manual testing.
 Use an email address you control and check its spam folder if needed.
+
+## Calendar storage and behavior
+
+Events live at `users/{uid}/events/{eventId}`. The repository always uses the
+signed-in user's UID. Published rules permit only that verified user to read,
+create, edit, or delete their events and validate event fields and timestamps.
+The calendar listens to Firestore snapshots, so changes appear on other devices
+signed in to the same account. Cached/pending changes are labeled in the UI;
+an offline write is not confirmed as synced until Firebase acknowledges it.
+
+Timed events are stored as UTC instants and displayed in each device's local
+time zone. All-day dates are stored as UTC calendar dates and reconstructed
+without shifting days across time zones. End dates are exclusive in storage.
+Edits preserve the creation timestamp; the last saved edit wins. A deleted
+remote event cannot be recreated by an editor using the update operation.
+
+Search covers event names, locations, notes, and tag names, with a tag filter.
+Month and Week select a day and show its agenda. Importance is a label only;
+the app does not automatically move events. Repeating events, reminders,
+guests/sharing, sports, friends, and file imports are not part of the calendar UI.
+Native provider sync is available separately through Settings.
+No sample events are inserted into users' accounts.
+
+The current calendar changes have been reviewed with static analysis only.
+No builds or tests were run, at the user's request. Existing auth test fixtures
+were updated for the new calendar destination and Settings logout. For manual
+verification, add an event, sign in to the same account on a second device,
+then edit and delete it. A different account should have its own empty calendar.
+
+## Provider sync / calendar merge
+
+Calendar views and provider sync share one event repository. Reads accept both
+`startAt`/`endAt` calendar documents and `start`/`end` provider documents; new
+writes keep both field pairs consistent. Tags, importance, all-day dates,
+provider identity, and conflict metadata survive calendar edits. Timed events
+stay UTC in the model and are converted to local time only in the calendar UI.
+The repository retains both stream contracts (event lists for provider sync,
+metadata snapshots for calendar sync status) without filtering out older docs.
+Provider Sync is available in Settings, within the signed-in session navigator.
+
+The merged Firestore rules add validated provider fields while keeping the
+owner/verified-user restriction. Deploy these updated rules before using this
+merged client with the live database; this merge does not deploy cloud changes:
+
+```sh
+firebase deploy --only firestore:rules --project calander-1025b
+```
+
+Legacy provider documents without a creation timestamp remain editable;
+updates preserve existing creation timestamps and never recreate deleted events.
+Merge validation uses static analysis only; builds and tests were not run.
