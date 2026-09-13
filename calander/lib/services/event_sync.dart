@@ -1,18 +1,17 @@
 import '../models/calendar_event.dart';
 import 'event_repository.dart';
 
-/// The one shared place dedup and cross-source conflict detection happen
-/// (Step 6), reused as-is by Step 7's sports sync — so no source adapter,
-/// sports included, has to (or gets to) implement this itself.
+/// The one shared place dedup and cross-source conflict detection happen,
+/// so no provider adapter has to (or gets to) implement this itself.
 ///
-/// Call this once per event a provider/source adapter fetches, passing the
+/// Call this once per event a provider adapter fetches, passing the
 /// current snapshot of the user's events (so repeated calls in one sync
 /// pass see each other's effects without re-querying Firestore every
-/// time — see `provider_sync.dart`'s `syncProvider`, which keeps that
+/// time — see `syncProvider` in `provider_sync.dart`, which keeps that
 /// snapshot updated using this function's return value).
 ///
 /// [incoming] must have `tag == null` and `status == EventStatus.active` —
-/// those are exactly the two fields this function (and every adapter)
+/// those are exactly the two fields this function (and provider adapters)
 /// must never be the one to set to anything else; asserting it here keeps
 /// that invariant enforced at the one chokepoint everything funnels
 /// through, not just by convention in each adapter.
@@ -25,10 +24,10 @@ Future<CalendarEvent> ingestProviderEvent({
   required CalendarEvent incoming,
   required List<CalendarEvent> currentEvents,
 }) async {
-  assert(incoming.tag == null, 'A source adapter must never set tag.');
+  assert(incoming.tag == null, 'A provider adapter must never set tag.');
   assert(incoming.status == EventStatus.active, 'An incoming event starts out active.');
 
-  // 1. Dedup: (source, sourceId) identifies "the same source event" no
+  // 1. Dedup: (source, sourceId) identifies "the same provider event" no
   // matter how its content changed since the last sync.
   CalendarEvent? existingBySourceId;
   for (final event in currentEvents) {
@@ -41,7 +40,7 @@ Future<CalendarEvent> ingestProviderEvent({
   if (existingBySourceId != null) {
     final updated = incoming.copyWith(
       id: existingBySourceId.id,
-      // Never overwrite tag or an existing conflict with the source's
+      // Never overwrite tag or an existing conflict with the provider's
       // (always-null/always-active) values.
       tag: existingBySourceId.tag,
       status: existingBySourceId.status,
@@ -54,8 +53,8 @@ Future<CalendarEvent> ingestProviderEvent({
 
   // 2. Cross-source conflict: an active event from a DIFFERENT source with
   // a similar title and a close start time. Never auto-merge or overwrite
-  // it -- both sides become pendingConflict, linked so a resolution UI can
-  // offer Keep original / Keep new / Keep both (see Step 6).
+  // it -- both sides become pendingConflict, linked so the resolution UI
+  // can offer Keep original / Keep new / Keep both.
   CalendarEvent? conflictingEvent;
   for (final event in currentEvents) {
     if (event.source != incoming.source &&

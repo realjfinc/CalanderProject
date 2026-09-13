@@ -3,8 +3,8 @@ import 'event_repository.dart';
 import 'event_sync.dart';
 import 'provider_adapter.dart';
 
-/// Runs one full sync pass for a single source: fetches its current events
-/// and feeds each through the shared dedup/conflict utility.
+/// Runs one full sync pass for a single provider: fetches its current
+/// events and feeds each through the shared dedup/conflict utility.
 ///
 /// Keeps a local, mutable snapshot of events (seeded from the repository
 /// once) updated with each [ingestProviderEvent] result as it goes, so
