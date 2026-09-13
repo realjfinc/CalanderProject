@@ -28,19 +28,24 @@ service cloud.firestore {
       // `sports` is already an allowed `source` value below.
       match /events/{eventId} {
         // Scoped to the owning authenticated user only -- same model as
-        // every other per-user collection above. This used to also
-        // require `request.auth.token.email_verified == true`, but that
-        // check is redundant (the app's own VerificationScreen already
-        // fully gates unverified accounts out of the calendar UI, so no
-        // client ever attempts an events write while unverified) and was
-        // actively harmful: a signed-in ID token's `email_verified` claim
-        // can lag a few seconds to minutes behind the account's actual
-        // verification state (a known Firebase behavior -- verifying
-        // refreshes the local user profile immediately, but the ID token
-        // used for Firestore requests only reflects that until the token
-        // is explicitly force-refreshed), which surfaced as "Your
-        // calendar could not be accessed. Check that you're signed in"
-        // for users who genuinely were.
+        // every other per-user collection above. This used to also require
+        // `request.auth.token.email_verified == true`, but that check
+        // bought little: the calendar UI itself is already fully gated
+        // behind VerificationScreen for a verified session, and
+        // TagRoutingReconciler (wired from main(), independently of that
+        // UI gate) writes to events for a signed-in account regardless of
+        // verification status -- so an unverified user's own background
+        // tag-routing writes were already reaching Firestore and getting
+        // silently denied here anyway.
+        //
+        // Worse, it was actively harmful: a signed-in ID token's
+        // `email_verified` claim can lag the account's actual verification
+        // state by anywhere from seconds to minutes -- a known Firebase
+        // behavior, since verifying updates the local user profile
+        // immediately but the ID token used for Firestore requests only
+        // reflects that once it's explicitly force-refreshed. That surfaced
+        // as "Your calendar could not be accessed. Check that you're
+        // signed in" for users who genuinely were.
         function owner() {
           return request.auth != null && request.auth.uid == userId;
         }
