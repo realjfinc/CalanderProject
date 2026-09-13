@@ -240,7 +240,7 @@ class _SignedOutFlowState extends State<SignedOutFlow> {
                   Flexible(
                     flex: 3,
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 60),
                       child: Text(
                         'or continue with',
                         textAlign: TextAlign.center,
