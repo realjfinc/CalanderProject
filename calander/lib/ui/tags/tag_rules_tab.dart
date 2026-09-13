@@ -49,12 +49,18 @@ class TagRulesTab extends StatelessWidget {
     return StreamBuilder<List<EventTag>>(
       stream: tagRepository.watchTags(),
       builder: (context, tagSnapshot) {
+        if (tagSnapshot.hasError) {
+          return const Center(child: Text('Unable to load tags. Please try again later.'));
+        }
         final tags = tagSnapshot.data ?? const [];
         final tagsById = {for (final tag in tags) tag.id: tag};
 
         return StreamBuilder<TagRoutingSettings>(
           stream: routingRepository.watchSettings(),
           builder: (context, settingsSnapshot) {
+            if (settingsSnapshot.hasError) {
+              return const Center(child: Text('Unable to load tag rules. Please try again later.'));
+            }
             if (!settingsSnapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }

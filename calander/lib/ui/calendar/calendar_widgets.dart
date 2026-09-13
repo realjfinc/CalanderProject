@@ -86,13 +86,14 @@ class CalendarPanel extends StatelessWidget {
   final Color? tint;
   final double padding;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.all(padding),
-    decoration: BoxDecoration(
-      color: tint ?? Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
+  Widget build(BuildContext context) => Material(
+    color: tint ?? Theme.of(context).colorScheme.surface,
+    borderRadius: BorderRadius.circular(16),
+    clipBehavior: Clip.antiAlias,
+    child: Padding(
+      padding: EdgeInsets.all(padding),
+      child: child,
     ),
-    child: child,
   );
 }
 

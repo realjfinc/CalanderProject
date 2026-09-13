@@ -11,6 +11,9 @@ class _FakeEventRepository implements EventRepository {
   final Map<String, CalendarEvent> _events = {};
   final _controller = StreamController<List<CalendarEvent>>.broadcast();
   final List<(String, String?)> setTagCalls = [];
+  bool failUpdates = false;
+
+  void fail() => _controller.addError(StateError('permission-denied'));
 
   void seed(CalendarEvent event) {
     _events[event.id] = event;
@@ -26,7 +29,7 @@ class _FakeEventRepository implements EventRepository {
     perListener = StreamController<List<CalendarEvent>>(
       onListen: () {
         perListener.add(_events.values.toList());
-        upstream = _controller.stream.listen(perListener.add);
+        upstream = _controller.stream.listen(perListener.add, onError: perListener.addError);
       },
       onCancel: () => upstream?.cancel(),
     );
@@ -42,6 +45,7 @@ class _FakeEventRepository implements EventRepository {
 
   @override
   Future<void> updateEvent(CalendarEvent event) async {
+    if (failUpdates) throw StateError('permission-denied');
     final existing = _events[event.id];
     if (existing != null && existing.tag != event.tag) {
       setTagCalls.add((event.id, event.tag));
@@ -61,6 +65,8 @@ class _FakeTagRoutingRepository implements TagRoutingRepository {
   final _controller = StreamController<TagRoutingSettings>.broadcast();
   TagRoutingSettings _current = const TagRoutingSettings();
 
+  void fail() => _controller.addError(StateError('permission-denied'));
+
   void seed(TagRoutingSettings settings) {
     _current = settings;
     _controller.add(settings);
@@ -73,7 +79,7 @@ class _FakeTagRoutingRepository implements TagRoutingRepository {
     perListener = StreamController<TagRoutingSettings>(
       onListen: () {
         perListener.add(_current);
-        upstream = _controller.stream.listen(perListener.add);
+        upstream = _controller.stream.listen(perListener.add, onError: perListener.addError);
       },
       onCancel: () => upstream?.cancel(),
     );
@@ -105,6 +111,43 @@ CalendarEvent _event({
 }
 
 void main() {
+  test('settings denial is handled and stops using cached rules', () async {
+    final events = _FakeEventRepository();
+    final routing = _FakeTagRoutingRepository();
+    final reconciler = TagRoutingReconciler(events: events, routing: routing);
+    addTearDown(reconciler.stop);
+    routing.seed(TagRoutingSettings(autoTagEnabled: true, tagRules: [
+      const TagRule(field: RuleField.title, operator: RuleOperator.contains, value: 'standup', tag: 'work'),
+    ]));
+    reconciler.start();
+    await Future<void>.delayed(Duration.zero);
+    routing.fail();
+    await Future<void>.delayed(Duration.zero);
+    events.seed(_event());
+    await Future<void>.delayed(Duration.zero);
+    expect(events.setTagCalls, isEmpty);
+  });
+
+  test('event listener and tag-write denials are handled', () async {
+    final events = _FakeEventRepository()..failUpdates = true;
+    final routing = _FakeTagRoutingRepository();
+    final reconciler = TagRoutingReconciler(events: events, routing: routing);
+    addTearDown(reconciler.stop);
+    routing.seed(TagRoutingSettings(autoTagEnabled: true, tagRules: [
+      const TagRule(field: RuleField.title, operator: RuleOperator.contains, value: 'standup', tag: 'work'),
+    ]));
+    events.seed(_event());
+    reconciler.start();
+    await Future<void>.delayed(Duration.zero);
+    events.fail();
+    await Future<void>.delayed(Duration.zero);
+    expect(events.setTagCalls, isEmpty);
+    events.failUpdates = false;
+    events.seed(_event());
+    await Future<void>.delayed(Duration.zero);
+    expect(events.setTagCalls, [('e1', 'work')]);
+  });
+
   test('assigns a tag to a matching untagged event once auto-tagging is enabled', () async {
     final events = _FakeEventRepository();
     final routing = _FakeTagRoutingRepository();

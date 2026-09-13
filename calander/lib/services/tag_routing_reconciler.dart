@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../models/calendar_event.dart';
 import '../models/tag_rule.dart';
 import 'event_repository.dart';
@@ -33,14 +35,22 @@ class TagRoutingReconciler {
     _settingsSubscription ??= _routing.watchSettings().listen((settings) {
       _latestSettings = settings;
       _reconcile();
+    }, onError: (Object error) {
+      _latestSettings = const TagRoutingSettings();
+      debugPrint('Tag-routing settings unavailable: $error');
     });
     _eventsSubscription ??= _events.watchEvents().listen((events) {
       _latestEvents = events;
       _reconcile();
+    }, onError: (Object error) {
+      _latestEvents = const [];
+      debugPrint('Tag-routing events unavailable: $error');
     });
   }
 
   Future<void> stop() async {
+    _latestSettings = const TagRoutingSettings();
+    _latestEvents = const [];
     await _eventsSubscription?.cancel();
     await _settingsSubscription?.cancel();
     _eventsSubscription = null;
@@ -54,8 +64,16 @@ class TagRoutingReconciler {
       if (event.status != EventStatus.active) continue;
       final matchedTag = resolveAutoTag(event, _latestSettings);
       if (matchedTag != null) {
-        unawaited(_events.updateEvent(event.copyWith(tag: matchedTag)));
+        unawaited(_applyTag(event.copyWith(tag: matchedTag)));
       }
+    }
+  }
+
+  Future<void> _applyTag(CalendarEvent event) async {
+    try {
+      await _events.updateEvent(event);
+    } catch (error) {
+      debugPrint('Automatic tag update failed: $error');
     }
   }
 }

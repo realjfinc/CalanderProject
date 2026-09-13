@@ -19,7 +19,8 @@ class TagRoutingBootstrap {
   TagRoutingReconciler? _reconciler;
 
   void onAuthChanged() {
-    final uid = auth.account?.uid;
+    final account = auth.account;
+    final uid = account != null && account.verified ? account.uid : null;
     if (uid == _activeUid) return;
     _reconciler?.stop();
     _reconciler = null;

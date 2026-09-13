@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../models/calendar_event.dart';
 import 'event_repository.dart';
 import 'notification_scheduler.dart';
@@ -18,7 +20,15 @@ class NotificationReconciler {
   StreamSubscription<List<CalendarEvent>>? _subscription;
 
   void start() {
-    _subscription ??= _events.watchEvents().listen(_scheduler.reconcile);
+    _subscription ??= _events.watchEvents().listen((events) async {
+      try {
+        await _scheduler.reconcile(events);
+      } catch (error) {
+        debugPrint('Reminder scheduling failed: $error');
+      }
+    }, onError: (Object error) {
+      debugPrint('Reminder events unavailable: $error');
+    });
   }
 
   Future<void> stop() async {
