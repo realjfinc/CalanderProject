@@ -45,6 +45,7 @@ Future<CalendarEvent> ingestProviderEvent({
       tag: existingBySourceId.tag,
       status: existingBySourceId.status,
       conflictGroupId: existingBySourceId.conflictGroupId,
+      conflictRole: existingBySourceId.conflictRole,
     );
     await repository.updateEvent(updated);
     return updated;

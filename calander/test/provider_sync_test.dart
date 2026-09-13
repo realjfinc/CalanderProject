@@ -1,14 +1,15 @@
 import 'package:calander/models/calendar_event.dart';
+import 'package:calander/services/conflict_resolver.dart';
 import 'package:calander/services/event_repository.dart';
 import 'package:calander/services/provider_adapter.dart';
 import 'package:calander/services/provider_sync.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeAdapter implements ProviderAdapter {
-  _FakeAdapter(this.events);
+  _FakeAdapter(this.events, {this.source = EventSource.google});
   final List<CalendarEvent> events;
   @override
-  EventSource get source => EventSource.google;
+  final EventSource source;
 
   @override
   Future<List<CalendarEvent>> fetchEvents() async => events;
@@ -47,6 +48,18 @@ CalendarEvent _googleEvent(String sourceId, {String title = 'Standup'}) {
     start: start,
     end: start.add(const Duration(minutes: 30)),
     source: EventSource.google,
+    sourceId: sourceId,
+  );
+}
+
+CalendarEvent _outlookEvent(String sourceId, {String title = 'Standup'}) {
+  final start = DateTime.utc(2026, 3, 1, 10);
+  return CalendarEvent(
+    id: '',
+    title: title,
+    start: start,
+    end: start.add(const Duration(minutes: 30)),
+    source: EventSource.outlook,
     sourceId: sourceId,
   );
 }
@@ -104,4 +117,40 @@ void main() {
     expect(events, hasLength(2));
     expect(events.every((e) => e.status == EventStatus.active), isTrue);
   });
+
+  test(
+    'a cross-source conflict survives a resync of either side and stays resolvable end-to-end',
+    () async {
+      final repo = _FakeEventRepository();
+
+      // Google creates the "original" side of a conflict...
+      await syncProvider(adapter: _FakeAdapter([_googleEvent('g-1')]), repository: repo);
+      // ...Outlook's similar event triggers the conflict.
+      await syncProvider(
+        adapter: _FakeAdapter([_outlookEvent('o-1')], source: EventSource.outlook),
+        repository: repo,
+      );
+
+      var events = await repo.watchEvents().first;
+      expect(groupConflicts(events), hasLength(1));
+
+      // Regression: resyncing the ORIGINAL side again (e.g. the next
+      // scheduled sync) must not corrupt the pair -- it should still be
+      // exactly one resolvable conflict afterwards, not silently dropped
+      // from the resolution UI because a role field got wiped.
+      await syncProvider(adapter: _FakeAdapter([_googleEvent('g-1')]), repository: repo);
+
+      events = await repo.watchEvents().first;
+      expect(groupConflicts(events), hasLength(1));
+
+      // And resyncing the NEW side too.
+      await syncProvider(
+        adapter: _FakeAdapter([_outlookEvent('o-1')], source: EventSource.outlook),
+        repository: repo,
+      );
+
+      events = await repo.watchEvents().first;
+      expect(groupConflicts(events), hasLength(1));
+    },
+  );
 }

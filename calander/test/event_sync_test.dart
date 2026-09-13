@@ -111,6 +111,7 @@ void main() {
       sourceId: 'g-1',
       status: EventStatus.pendingConflict,
       conflictGroupId: 'group-1',
+      conflictRole: 'new',
     );
 
     final result = await ingestProviderEvent(
@@ -121,6 +122,11 @@ void main() {
 
     expect(result.status, EventStatus.pendingConflict);
     expect(result.conflictGroupId, 'group-1');
+    // Regression: a resync must not wipe conflictRole to the provider's
+    // always-null value -- doing so would silently corrupt the conflict
+    // pair (conflict_resolver.groupConflicts requires both roles present),
+    // permanently hiding it from the resolution UI.
+    expect(result.conflictRole, 'new');
   });
 
   test('detects a cross-source conflict: similar title + close start time from a different source', () async {
