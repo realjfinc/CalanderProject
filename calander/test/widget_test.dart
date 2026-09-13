@@ -4,6 +4,10 @@ import 'dart:ui' as ui;
 
 import 'package:calander/app.dart';
 import 'package:calander/auth/auth_service.dart';
+import 'package:calander/services/firestore_event_repository.dart';
+import 'package:calander/services/firestore_tag_repository.dart';
+import 'package:calander/ui/calendar/calendar_home_screen.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -80,7 +84,15 @@ Future<void> mount(
   TestAuth auth, {
   ThemeMode mode = ThemeMode.light,
 }) async {
-  await tester.pumpWidget(CalanderApp(auth: auth, themeMode: mode));
+  final firestore = FakeFirebaseFirestore();
+  await tester.pumpWidget(
+    CalanderApp(
+      auth: auth,
+      themeMode: mode,
+      events: FirestoreEventRepository(uid: 'test-user', firestore: firestore),
+      tags: FirestoreTagRepository(uid: 'test-user', firestore: firestore),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -132,7 +144,7 @@ void main() {
     expect(find.text('Log out'), findsNothing);
     auth.verifyOnRefresh = true;
     await tapText(tester, 'I’ve verified my email');
-    expect(find.text('Log out'), findsOneWidget);
+    expect(find.byType(CalendarHomeScreen), findsOneWidget);
   });
 
   testWidgets(
@@ -169,12 +181,13 @@ void main() {
   );
 
   testWidgets(
-    'Verified session shows Manage Tags, Add Event from Upload, and Log out controls, and clears on logout',
+    'Verified session shows calendar and settings logout clears all private routes',
     (tester) async {
       final auth = TestAuth()..setUser(verified: true);
       await mount(tester, auth);
+      expect(find.byType(CalendarHomeScreen), findsOneWidget);
+      await tapText(tester, 'Settings');
       // Step 1 added "Manage Tags"; Step 3 added "Add Event from Upload".
-      expect(find.byType(FilledButton), findsNWidgets(3));
       expect(find.text('Manage Tags'), findsOneWidget);
       expect(find.text('Add Event from Upload'), findsOneWidget);
       expect(find.text('Welcome'), findsNothing);

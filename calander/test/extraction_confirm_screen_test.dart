@@ -17,6 +17,15 @@ class _RecordingEventRepository implements EventRepository {
     savedEvent = event;
     return 'generated-id';
   }
+
+  @override
+  Stream<List<CalendarEvent>> watchEvents() => const Stream.empty();
+
+  @override
+  Future<void> updateEvent(CalendarEvent event) async {}
+
+  @override
+  Future<void> deleteEvent(String eventId) async {}
 }
 
 class _FakeUploadStorage implements UploadStorage {

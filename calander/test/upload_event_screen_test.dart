@@ -27,6 +27,15 @@ class _FakeExtractionService implements EventExtractionService {
 class _NoopEventRepository implements EventRepository {
   @override
   Future<String> addEvent(CalendarEvent event) async => 'id';
+
+  @override
+  Stream<List<CalendarEvent>> watchEvents() => const Stream.empty();
+
+  @override
+  Future<void> updateEvent(CalendarEvent event) async {}
+
+  @override
+  Future<void> deleteEvent(String eventId) async {}
 }
 
 class _NoopUploadStorage implements UploadStorage {
