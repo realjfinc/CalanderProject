@@ -9,6 +9,7 @@ import 'firebase_configuration.dart';
 import 'services/flutter_local_notifier.dart';
 import 'services/notifications_bootstrap.dart';
 import 'services/push_notification_service.dart';
+import 'services/tag_routing_bootstrap.dart';
 
 /// Runs in its own isolate when a push arrives while the app is
 /// backgrounded/terminated, so it needs its own Firebase init.
@@ -33,6 +34,10 @@ Future<void> main() async {
     final notifications = NotificationsBootstrap(auth: auth);
     auth.addListener(notifications.onAuthChanged);
     notifications.onAuthChanged();
+
+    final tagRouting = TagRoutingBootstrap(auth: auth);
+    auth.addListener(tagRouting.onAuthChanged);
+    tagRouting.onAuthChanged();
 
     runApp(CalanderApp(auth: auth));
   } catch (error) {

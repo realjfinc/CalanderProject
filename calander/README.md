@@ -12,7 +12,8 @@ Light and dark themes follow the device setting. Inter is bundled locally with i
 - Password-reset links open Firebase's hosted reset page; return to the app to log in.
 - Verified accounts open their calendar: Month, Week, Day, Search, and event details.
 - Create, edit, and delete private events with all-day/multi-day support, location, notes, tags, and Fixed/Flexible importance.
-- Tags, Add Event from Upload, Provider Sync, and logout are accessible from Settings.
+- Tags, Add Event from Upload, Tag Routing, Provider Sync, and logout are
+  accessible from Settings.
 - Google and Apple buttons are placeholders only.
 
 ## Firebase
@@ -84,6 +85,38 @@ Relevant code: `lib/models/extraction_input.dart`,
 `lib/ui/extraction/upload_event_screen.dart`, `lib/ui/extraction/extraction_confirm_screen.dart`.
 See `../functions/README.md` for the extraction pipeline itself, including
 the (not-yet-done) Blaze plan and API key setup it needs to actually deploy.
+
+## Tag Routing (Step 5)
+
+Two things live under Settings > Tag Routing:
+
+- **Events tab**: assign a tag to any untagged event, or change/clear any
+  event's current tag — direct user action always wins here, whether or
+  not the tag showing was assigned automatically.
+- **Auto-Tag Rules tab**: an `autoTagEnabled` toggle and a list of rules
+  (`{match: {field, operator, value}, tag}`, e.g. "if title contains
+  'standup', tag Work"), stored at `users/{uid}/settings/tagRouting`.
+
+Auto-tagging only ever runs while `autoTagEnabled` is true, and only ever
+touches an event whose `tag` is still `null` — once an event has a tag
+(user-set or previously auto-assigned), it's never touched again, which is
+what guarantees a user's override always sticks. This is bootstrapped from
+`main.dart` (not the widget tree) via `TagRoutingBootstrap`, same pattern
+as everything else that needs to run continuously in the background — see
+`lib/services/tag_routing_reconciler.dart`.
+
+Both the reconciler and the Events tab write a tag via the shared
+`EventRepository.updateEvent()` (passing `event.copyWith(tag: ...)`) rather
+than a narrower tag-only method — `lib/services/event_repository.dart`
+already documents why there's no field-locked "setTag" method: provider
+sync (Step 6) genuinely needs to update several fields at once, so the
+"only these two things ever write `tag`" guarantee is a discipline this
+code follows, not something the type system enforces structurally.
+
+Relevant code: `lib/models/tag_rule.dart`, `lib/services/tag_router.dart`
+(pure rule matching), `lib/services/tag_routing_reconciler.dart`,
+`lib/services/firestore_tag_routing_repository.dart`,
+`lib/ui/tags/tag_routing_screen.dart` (and its two tabs).
 
 ## Provider Sync (Step 6)
 
@@ -180,7 +213,14 @@ Storage call is made) and cover: the confirm screen saving with
 the user confirms, field edits before save, empty-title rejection, and
 attachment upload wiring. `../functions/` has its own test suite (see
 `../functions/README.md`) covering UTC normalization, LLM response parsing,
-and link/PDF text extraction against fakes.
+and link/PDF text extraction against fakes. The tag-routing tests cover:
+pure rule matching (`test/tag_router_test.dart`), the reconciler's
+stream-driven behavior with in-memory fakes — including that it never
+re-tags an event that already has one and does nothing while auto-tagging
+is off (`test/tag_routing_reconciler_test.dart`), the Firestore
+repositories via `fake_cloud_firestore` (`test/firestore_event_repository_test.dart`,
+`test/firestore_tag_routing_repository_test.dart`), and the manual
+tagging/override UI (`test/event_tags_tab_test.dart`).
 
 Before testing was stopped at the user's request, analysis and widget tests passed,
 and the web build succeeded. Android compilation was blocked while downloading

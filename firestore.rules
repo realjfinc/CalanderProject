@@ -12,6 +12,11 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
+      // Per-user settings, including tag-routing rules (Step 5).
+      match /settings/{settingId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
       match /events/{eventId} {
         function owner() {
           return request.auth != null && request.auth.uid == userId
