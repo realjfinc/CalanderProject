@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Calander uses your photo library to extract event details from a picture, like a flyer or screenshot.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Calander uses your camera to extract event details from a photo you take, like a flyer.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

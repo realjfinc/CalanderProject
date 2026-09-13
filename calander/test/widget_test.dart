@@ -187,7 +187,9 @@ void main() {
       await mount(tester, auth);
       expect(find.byType(CalendarHomeScreen), findsOneWidget);
       await tapText(tester, 'Settings');
+      // Step 1 added "Manage Tags"; Step 3 added "Add Event from Upload".
       expect(find.text('Manage Tags'), findsOneWidget);
+      expect(find.text('Add Event from Upload'), findsOneWidget);
       expect(find.text('Welcome'), findsNothing);
       await tapText(tester, 'Log out');
       expect(find.text('Welcome'), findsOneWidget);

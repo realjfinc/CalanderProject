@@ -12,7 +12,7 @@ Light and dark themes follow the device setting. Inter is bundled locally with i
 - Password-reset links open Firebase's hosted reset page; return to the app to log in.
 - Verified accounts open their calendar: Month, Week, Day, Search, and event details.
 - Create, edit, and delete private events with all-day/multi-day support, location, notes, tags, and Fixed/Flexible importance.
-- Tags and Settings are accessible from the bottom navigation; logout is in Settings.
+- Tags, Add Event from Upload, Provider Sync, and logout are accessible from Settings.
 - Google and Apple buttons are placeholders only.
 
 ## Firebase
@@ -65,6 +65,25 @@ no such backend exists yet in this repo.
 All of this is bootstrapped from `main.dart` (not the widget tree), so it
 only runs against the real, initialized Firebase app and never activates
 during `test/widget_test.dart`'s fake-auth widget tests.
+
+## Upload/Image/Link Event Extraction (Step 3)
+
+From Settings > Add Event from Upload: pick a photo, take a photo, choose a
+PDF/image file, or paste a link. The `extractEvent` Cloud Function
+(`../functions/`) sends the content to an LLM, normalizes the result to UTC,
+and returns proposed event fields — nothing is saved yet. The confirm screen
+lets the user review/edit those fields before tapping "Save Event", which
+writes a `CalendarEvent` with `source: "upload"`, `sourceId: null`,
+`tag: null` (only direct user action or Step 5's routing logic may ever set
+`tag`) and, if a file was involved, uploads it to Cloud Storage and records
+its URL in `attachments`.
+
+Relevant code: `lib/models/extraction_input.dart`,
+`lib/models/extracted_event_draft.dart`, `lib/services/event_extraction_service.dart`,
+`lib/services/cloud_function_extraction_service.dart`, `lib/services/upload_storage.dart`,
+`lib/ui/extraction/upload_event_screen.dart`, `lib/ui/extraction/extraction_confirm_screen.dart`.
+See `../functions/README.md` for the extraction pipeline itself, including
+the (not-yet-done) Blaze plan and API key setup it needs to actually deploy.
 
 ## Provider Sync (Step 6)
 
@@ -154,7 +173,14 @@ logout, and narrow layouts with enlarged text. Preview renders are saved under
 `build/auth-previews/`. The tag-system tests use `fake_cloud_firestore` and an
 in-memory repository fake, and cover default-tag initialization (including
 idempotency and non-resurrection of deleted defaults), add/edit/delete, and
-per-user scoping.
+per-user scoping. The extraction tests use fakes for the extraction service,
+event repository, and upload storage (no real Cloud Function, LLM, or
+Storage call is made) and cover: the confirm screen saving with
+`source: "upload"`/`sourceId: null`/`tag: null`, nothing being saved before
+the user confirms, field edits before save, empty-title rejection, and
+attachment upload wiring. `../functions/` has its own test suite (see
+`../functions/README.md`) covering UTC normalization, LLM response parsing,
+and link/PDF text extraction against fakes.
 
 Before testing was stopped at the user's request, analysis and widget tests passed,
 and the web build succeeded. Android compilation was blocked while downloading
@@ -180,8 +206,9 @@ remote event cannot be recreated by an editor using the update operation.
 Search covers event names, locations, notes, and tag names, with a tag filter.
 Month and Week select a day and show its agenda. Importance is a label only;
 the app does not automatically move events. Repeating events, reminders,
-guests/sharing, sports, friends, and file imports are not part of the calendar UI.
-Native provider sync is available separately through Settings.
+guests/sharing, sports, and friends are not part of the calendar UI itself.
+Upload/image/link event extraction and native provider sync are available
+separately through Settings.
 No sample events are inserted into users' accounts.
 
 The current calendar changes have been reviewed with static analysis only.

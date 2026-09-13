@@ -10,6 +10,9 @@ import '../../services/event_repository.dart';
 import '../../services/firestore_event_repository.dart';
 import '../../services/firestore_tag_repository.dart';
 import '../../services/tag_repository.dart';
+import '../../services/cloud_function_extraction_service.dart';
+import '../../services/upload_storage.dart';
+import '../extraction/upload_event_screen.dart';
 import '../tags/tag_management_screen.dart';
 import '../sync/provider_sync_screen.dart';
 import 'calendar_widgets.dart';
@@ -924,6 +927,25 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
             context,
             MaterialPageRoute(
               builder: (_) => TagManagementScreen(repository: widget.tags),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      CalendarPanel(
+        padding: 0,
+        child: ListTile(
+          title: const Text('Add Event from Upload'),
+          subtitle: const Text('Photo, PDF, or a link — review before it saves'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => UploadEventScreen(
+                extractionService: CloudFunctionExtractionService(),
+                eventRepository: widget.events,
+                uploadStorage: FirebaseUploadStorage(uid: widget.auth.account!.uid),
+              ),
             ),
           ),
         ),
