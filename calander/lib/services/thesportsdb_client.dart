@@ -31,7 +31,12 @@ class TheSportsDbClient {
     if (response.statusCode != 200) {
       throw SportsApiException('Team search failed with status ${response.statusCode}');
     }
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw SportsApiException('Team search returned an unexpected response.');
+    }
     final teams = (body['teams'] as List?) ?? const [];
     return teams.cast<Map<String, dynamic>>().map(mapSportsDbTeam).whereType<FollowedTeam>().toList();
   }
@@ -45,7 +50,12 @@ class TheSportsDbClient {
     if (response.statusCode != 200) {
       throw SportsApiException('Upcoming events request failed with status ${response.statusCode}');
     }
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw SportsApiException('Upcoming events returned an unexpected response.');
+    }
     return ((body['events'] as List?) ?? const []).cast<Map<String, dynamic>>();
   }
 }

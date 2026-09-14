@@ -51,7 +51,12 @@ class OutlookCalendarAdapter implements ProviderAdapter {
       );
     }
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw OutlookCalendarSyncException('Outlook Calendar returned an unexpected response.');
+    }
     final items = (body['value'] as List?) ?? const [];
     return items.cast<Map<String, dynamic>>().map(mapOutlookEvent).whereType<CalendarEvent>().toList();
   }

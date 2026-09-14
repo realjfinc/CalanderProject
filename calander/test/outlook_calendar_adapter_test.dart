@@ -1,8 +1,19 @@
 import 'package:calander/models/calendar_event.dart';
 import 'package:calander/services/outlook_calendar_adapter.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 void main() {
+  group('fetchEvents', () {
+    test('throws OutlookCalendarSyncException instead of a raw parse error on a malformed body', () async {
+      final client = MockClient((request) async => http.Response('not json', 200));
+      final adapter = OutlookCalendarAdapter(accessToken: 'token', httpClient: client);
+
+      await expectLater(adapter.fetchEvents(), throwsA(isA<OutlookCalendarSyncException>()));
+    });
+  });
+
   test('maps an event whose timeZone is UTC (the only case this adapter trusts)', () {
     final event = mapOutlookEvent({
       'id': 'o-1',
