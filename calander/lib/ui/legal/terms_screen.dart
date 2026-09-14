@@ -194,9 +194,11 @@ class TermsScreen extends StatelessWidget {
       _Section(
         heading: '11. Termination',
         paragraphs: [
-          'You may stop using the app and delete your account at any '
-              'time. We may suspend or terminate your access if you '
-              'violate these Terms.',
+          'You may stop using the app and permanently delete your account '
+              'at any time from Settings → Delete Account — this '
+              'immediately and permanently removes your account and all '
+              'associated data and can’t be undone. We may suspend or '
+              'terminate your access if you violate these Terms.',
         ],
       ),
       SizedBox(height: 16),

@@ -188,8 +188,11 @@ effect.
 
 ## 11. Termination
 
-You may stop using the app and delete your account at any time. We may
-suspend or terminate your access if you violate these Terms.
+You may stop using the app and permanently delete your account at any
+time from **Settings → Delete Account** — this immediately and
+permanently removes your account and all associated data and can't be
+undone. We may suspend or terminate your access if you violate these
+Terms.
 
 ## 12. Changes to These Terms
 

@@ -1,10 +1,13 @@
 import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions/v2";
 
+import { deleteAccount as runDeleteAccount, type DeleteAccountDeps } from "./account/deleteAccount";
 import { extractEvent as runExtraction } from "./extraction/extractEvent";
 import { AnthropicLlmClient } from "./extraction/llmClient";
 import type { ExtractRequest } from "./extraction/types";
@@ -39,6 +42,36 @@ export const extractEvent = onCall({ secrets: [anthropicApiKey] }, async (reques
     return await runExtraction(data, llmClient);
   } catch (error) {
     throw new HttpsError("invalid-argument", (error as Error).message);
+  }
+});
+
+/**
+ * Callable Cloud Function: permanently deletes the caller's own account --
+ * their Firestore data, both rate-limit counters, their Storage uploads,
+ * and the Auth user record itself. Satisfies App Store Review Guideline
+ * 5.1.1(v), which requires in-app self-service account deletion for any
+ * app that supports account creation. There's no undo; the client is
+ * expected to confirm with the user before calling this.
+ */
+export const deleteAccount = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in to delete your account.");
+  }
+
+  const firestore = getFirestore();
+  const bucket = getStorage().bucket();
+  const deps: DeleteAccountDeps = {
+    deleteUserDocTree: (uid) => firestore.recursiveDelete(firestore.collection("users").doc(uid)),
+    deleteDoc: (collection, id) => firestore.collection(collection).doc(id).delete().then(() => undefined),
+    deleteStoragePrefix: (prefix) => bucket.deleteFiles({ prefix }),
+    deleteAuthUser: (uid) => getAuth().deleteUser(uid),
+  };
+
+  try {
+    await runDeleteAccount(request.auth.uid, deps);
+  } catch (error) {
+    logger.error("deleteAccount failed", { uid: request.auth.uid, error });
+    throw new HttpsError("internal", "Your account could not be deleted. Please try again.");
   }
 });
 

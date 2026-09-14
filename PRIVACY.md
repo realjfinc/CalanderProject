@@ -96,8 +96,11 @@ user can read or write your events.
 
 We keep your account and calendar data for as long as your account stays
 active. You can delete individual events, tags, or followed teams at any
-time from within the app. To delete your account and all associated data,
-contact us using the details below.
+time from within the app. You can also permanently delete your entire
+account and all associated data — your calendar, tags, followed teams,
+and uploaded attachments — yourself, in-app, from **Settings → Delete
+Account**. This is immediate and can't be undone. If you'd rather we do
+it for you, contact us using the details below.
 
 ## Your Choices
 

@@ -20,6 +20,7 @@ class TestAuth extends AuthService {
   int resets = 0;
   int refreshes = 0;
   int resends = 0;
+  int accountDeletions = 0;
   bool verifyOnRefresh = false;
   Completer<void>? loginPending;
   @override
@@ -67,6 +68,13 @@ class TestAuth extends AuthService {
 
   @override
   Future<void> logOut() async {
+    user = null;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    accountDeletions++;
     user = null;
     notifyListeners();
   }
@@ -213,6 +221,30 @@ void main() {
       await tapText(tester, 'Log out');
       expect(find.text('Welcome To Calander'), findsOneWidget);
       expect(find.text('Log out'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Delete Account asks for confirmation, then signs out and clears the account',
+    (tester) async {
+      final auth = TestAuth()..setUser(verified: true);
+      await mount(tester, auth);
+      await tapText(tester, 'Settings');
+      await tapText(tester, 'Delete Account');
+      // The confirmation dialog is showing; the account isn't deleted yet.
+      expect(find.text('Delete account?'), findsOneWidget);
+      expect(auth.accountDeletions, 0);
+
+      await tapText(tester, 'Cancel');
+      expect(find.text('Delete account?'), findsNothing);
+      expect(auth.accountDeletions, 0);
+      expect(find.text('Manage Tags'), findsOneWidget);
+
+      await tapText(tester, 'Delete Account');
+      await tapText(tester, 'Delete');
+      await tester.pumpAndSettle();
+      expect(auth.accountDeletions, 1);
+      expect(find.text('Welcome To Calander'), findsOneWidget);
     },
   );
 
