@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:calander/app.dart';
 import 'package:calander/auth/auth_service.dart';
+import 'package:calander/models/calendar_event.dart';
 import 'package:calander/services/firestore_event_repository.dart';
 import 'package:calander/services/firestore_tag_repository.dart';
 import 'package:calander/ui/calendar/calendar_home_screen.dart';
@@ -101,6 +102,21 @@ void main() {
     final font = FontLoader('Inter')
       ..addFont(rootBundle.load('assets/fonts/Inter.ttf'));
     await font.load();
+
+    // Icon glyphs render as tofu boxes under the test binding unless the
+    // font is loaded explicitly; only used by the visual-preview tests
+    // below, so skip quietly if the SDK cache isn't where expected.
+    final flutterRoot = Platform.environment['FLUTTER_ROOT'];
+    if (flutterRoot != null) {
+      final iconFontFile = File(
+        '$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+      );
+      if (iconFontFile.existsSync()) {
+        final iconFont = FontLoader('MaterialIcons')
+          ..addFont(iconFontFile.readAsBytes().then(ByteData.sublistView));
+        await iconFont.load();
+      }
+    }
   });
   testWidgets('Welcome uses Calander and social buttons remain visual only', (
     tester,
@@ -157,7 +173,7 @@ void main() {
       expect(auth.resends, 1);
       expect(find.text('Resend email in 60s'), findsOneWidget);
       await tapText(tester, 'Use a different account');
-      expect(find.text('Welcome'), findsOneWidget);
+      expect(find.text('Welcome To Calander'), findsOneWidget);
     },
   );
 
@@ -195,7 +211,7 @@ void main() {
       expect(find.text('Sports Mode'), findsNothing);
       expect(find.text('Welcome'), findsNothing);
       await tapText(tester, 'Log out');
-      expect(find.text('Welcome'), findsOneWidget);
+      expect(find.text('Welcome To Calander'), findsOneWidget);
       expect(find.text('Log out'), findsNothing);
     },
   );
@@ -243,8 +259,12 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      for (final screen in ['welcome', 'login']) {
-        if (screen == 'login') {
+      for (final screen in ['welcome', 'privacy', 'login']) {
+        if (screen == 'privacy') {
+          await tapText(tester, 'Privacy Policy');
+        } else if (screen == 'login') {
+          await tester.tap(find.byTooltip('Back'));
+          await tester.pumpAndSettle();
           await tapText(tester, 'I already have an account');
         }
         final boundary =
@@ -260,4 +280,68 @@ void main() {
       }
     }
   });
+
+  testWidgets(
+    'Render calendar and settings previews for visual review',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+        final firestore = FakeFirebaseFirestore();
+        final events = FirestoreEventRepository(uid: 'test-user', firestore: firestore);
+        final now = DateTime.now().toUtc();
+        await events.addEvent(
+          CalendarEvent(
+            id: 'preview-1',
+            title: 'Design review',
+            location: 'Studio',
+            start: DateTime.utc(now.year, now.month, now.day, 14),
+            end: DateTime.utc(now.year, now.month, now.day, 15),
+          ),
+        );
+        await events.addEvent(
+          CalendarEvent(
+            id: 'preview-2',
+            title: 'Jets game',
+            source: EventSource.sports,
+            start: DateTime.utc(now.year, now.month, now.day, 18),
+            end: DateTime.utc(now.year, now.month, now.day, 21),
+          ),
+        );
+        final key = GlobalKey();
+        await tester.pumpWidget(
+          RepaintBoundary(
+            key: key,
+            child: CalanderApp(
+              key: ValueKey(mode),
+              auth: TestAuth()..setUser(verified: true),
+              themeMode: mode,
+              events: events,
+              tags: FirestoreTagRepository(uid: 'test-user', firestore: firestore),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        for (final screen in ['calendar', 'settings']) {
+          if (screen == 'settings') {
+            await tapText(tester, 'Settings');
+          }
+          final boundary =
+              key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+          await tester.runAsync(() async {
+            final image = await boundary.toImage();
+            final data = await image.toByteData(format: ui.ImageByteFormat.png);
+            final file = File('build/auth-previews/$screen-${mode.name}.png');
+            await file.parent.create(recursive: true);
+            await file.writeAsBytes(data!.buffer.asUint8List());
+            image.dispose();
+          });
+        }
+      }
+    },
+  );
 }

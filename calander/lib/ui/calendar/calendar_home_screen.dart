@@ -16,6 +16,7 @@ import '../../services/firestore_tag_routing_repository.dart';
 import '../../services/firestore_followed_teams_repository.dart';
 import '../../services/followed_teams_repository.dart';
 import '../extraction/upload_event_screen.dart';
+import '../legal/privacy_policy_screen.dart';
 import '../sports/sports_mode_screen.dart';
 import '../tags/tag_management_screen.dart';
 import '../tags/tag_routing_screen.dart';
