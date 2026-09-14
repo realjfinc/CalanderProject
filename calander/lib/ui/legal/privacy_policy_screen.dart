@@ -76,6 +76,31 @@ class PrivacyPolicyScreen extends StatelessWidget {
       ),
       SizedBox(height: 16),
       _Section(
+        heading: 'FTC AI Disclosure',
+        paragraphs: [
+          'In line with FTC guidance on disclosing the use of artificial '
+              'intelligence:',
+        ],
+        bullets: [
+          'Calander uses a third-party AI model (Anthropic’s Claude) to '
+              'read a photo, PDF, or link you submit and propose calendar '
+              'event details. This is an AI-assisted extraction feature, '
+              'not a human reviewing your content.',
+          'AI output can be wrong. The model can misread dates, times, '
+              'locations, or other details, especially from low-quality '
+              'images, ambiguous text, or unusual formats. Always check an '
+              'extracted event before saving it.',
+          'No event is ever saved automatically. Every AI-generated draft '
+              'is shown to you for review, and you must explicitly confirm '
+              '— and may edit — it before it’s added to your calendar. AI '
+              'never makes the final decision; you do.',
+          'We do not use AI to profile you, score you, or make any '
+              'automated decision that has a legal or similarly '
+              'significant effect on you.',
+        ],
+      ),
+      SizedBox(height: 16),
+      _Section(
         heading: 'Other Third-Party Services',
         bullets: [
           'Firebase (Google): powers authentication, calendar data '
@@ -125,6 +150,44 @@ class PrivacyPolicyScreen extends StatelessWidget {
           'Disconnect a connected calendar provider at any time.',
           'Unfollow a sports team to stop syncing its games.',
           'Turn off notifications from your device settings.',
+        ],
+      ),
+      SizedBox(height: 16),
+      _Section(
+        heading: 'Privacy Nutrition Label',
+        paragraphs: [
+          'A quick-reference summary of what we collect and why, similar '
+              'to an app store “privacy nutrition label.” The sections '
+              'above are the full policy; this list is a shortcut, not a '
+              'replacement.',
+        ],
+        bullets: [
+          'Name, email, password — collected for account creation & '
+              'sign-in — shared only with Firebase as our infrastructure '
+              'provider — linked to your identity.',
+          'Calendar events, notes, tags — collected for core app '
+              'functionality — shared only with Firebase for storage — '
+              'linked to your identity.',
+          'Photos/PDFs/links you submit for extraction — collected only '
+              'what you submit — used for AI event extraction — shared '
+              'with Anthropic (processed, never used for training) — '
+              'linked to your identity.',
+          'Connected calendar data (Google/Outlook/iCloud) — collected '
+              'only if you connect a provider — used to sync events into '
+              'Calander — shared with the provider itself, via the '
+              'permissions you grant — linked to your identity.',
+          'Followed sports teams — collected only if you use Sports Mode '
+              '— used to show game schedules — shared with TheSportsDB '
+              '(team name only, no account data) — not linked to your '
+              'identity.',
+          'Push notification token & device timezone — collected for '
+              'event reminders and correct local times — shared with '
+              'Firebase Cloud Messaging — linked to your identity.',
+          'Precise/background location — not collected.',
+          'Health, financial, or browsing-history data — not collected.',
+          'Advertising or cross-app tracking identifiers — not collected.',
+          'We do not sell your data, and we do not use your data for '
+              'advertising.',
         ],
       ),
       SizedBox(height: 16),

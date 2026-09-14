@@ -105,6 +105,31 @@ test('all client collections require quota and unauthenticated writes are denied
   }
   await assertFails(setDoc(doc(env.unauthenticatedContext().firestore(), path), { name: 'Bypass' }));
 });
+test('event writes reject an unknown reminders value, too many reminders, and too many attachments', async () => {
+  const db = client();
+  const event = doc(db, 'users/alice/events/event');
+  const quota = doc(db, 'clientWriteLimits/alice');
+  const start = Timestamp.fromMillis(2000000000000);
+  const end = Timestamp.fromMillis(2000003600000);
+  const basePayload = {
+    title: 'Football', location: '', notes: '', startAt: start, endAt: end,
+    start, end, allDay: false, flexible: true, tagId: null, tag: null,
+    source: 'manual', sourceId: null, status: 'active', importance: 'flexible',
+    repeat: null, conflictGroupId: null, conflictRole: null,
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  };
+  async function attempt(overrides) {
+    const batch = writeBatch(db);
+    batch.set(event, { ...basePayload, attachments: null, reminders: null, ...overrides });
+    batch.set(quota, { count: 1, windowStart: serverTimestamp(), updatedAt: serverTimestamp(), paths: [event.path] });
+    return batch.commit();
+  }
+  await assertFails(attempt({ reminders: ['everyMinute'] }));
+  await assertFails(attempt({ reminders: Array(21).fill('oneHour') }));
+  await assertFails(attempt({ attachments: Array(6).fill('https://example.com/a') }));
+  await assertFails(attempt({ attachments: ['a'.repeat(2001)] }));
+  await assertSucceeds(attempt({ reminders: ['oneHour', 'oneDay'], attachments: ['https://example.com/a'] }));
+});
 test('concurrent clients cannot both consume the final slot', async () => {
   await seed(99);
   const consume = async db => runTransaction(db, async tx => {

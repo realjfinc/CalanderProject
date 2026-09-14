@@ -1,0 +1,11 @@
+# Never commit real credentials, regardless of which subproject they'd
+# land in. Each subproject also has its own more specific .gitignore;
+# this is a repo-wide backstop.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+*credentials*.json

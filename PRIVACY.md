@@ -54,6 +54,23 @@ notes.
   event, it's stored securely in your account's private cloud storage.
   Extraction itself doesn't otherwise retain your file.
 
+## FTC AI Disclosure
+
+In line with FTC guidance on disclosing the use of artificial intelligence:
+
+- Calander uses a third-party AI model (**Anthropic's Claude**) to read a
+  photo, PDF, or link you submit and propose calendar event details. This is
+  an AI-assisted extraction feature, not a human reviewing your content.
+- **AI output can be wrong.** The model can misread dates, times, locations,
+  or other details, especially from low-quality images, ambiguous text, or
+  unusual formats. Always check an extracted event before saving it.
+- **No event is ever saved automatically.** Every AI-generated draft is
+  shown to you for review, and you must explicitly confirm — and may edit —
+  it before it's added to your calendar. AI never makes the final decision;
+  you do.
+- We do not use AI to profile you, score you, or make any automated
+  decision that has a legal or similarly significant effect on you.
+
 ## Other Third-Party Services
 
 - **Firebase (Google)**: powers authentication, calendar data storage,
@@ -89,6 +106,26 @@ contact us using the details below.
 - Disconnect a connected calendar provider at any time.
 - Unfollow a sports team to stop syncing its games.
 - Turn off notifications from your device settings.
+
+## Privacy Nutrition Label
+
+A quick-reference summary of what we collect and why, similar to an app
+store "privacy nutrition label." The sections above are the full policy;
+this table is a shortcut, not a replacement.
+
+| Data category | Collected? | Used for | Shared with a third party? | Linked to your identity? |
+|---|---|---|---|---|
+| Name, email, password | Yes | Account creation & sign-in | Firebase (infrastructure only) | Yes |
+| Calendar events, notes, tags | Yes | Core app functionality | Firebase (storage only) | Yes |
+| Photos/PDFs/links you submit for extraction | Yes, only what you submit | AI event extraction | Anthropic (processed, not used for training) | Yes |
+| Connected calendar data (Google/Outlook/iCloud) | Only if you connect a provider | Sync events into Calander | The provider itself, via the permissions you grant | Yes |
+| Followed sports teams | Only if you use Sports Mode | Show game schedules | TheSportsDB (team name only, no account data) | No |
+| Push notification token & device timezone | Yes | Event reminders, correct local times | Firebase Cloud Messaging | Yes |
+| Precise/background location | No | — | — | — |
+| Health, financial, or browsing-history data | No | — | — | — |
+| Advertising or cross-app tracking identifiers | No | — | — | — |
+
+We do not sell your data, and we do not use your data for advertising.
 
 ## Children's Privacy
 

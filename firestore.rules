@@ -88,6 +88,22 @@ service cloud.firestore {
           return request.auth != null && request.auth.uid == userId;
         }
 
+        // Bounds a list's length and, for however many of its first
+        // maxLen slots are actually present, each element's own type and
+        // string length -- Firestore rules have no per-element `.every()`,
+        // so this unrolls the check up to a fixed, generous cap rather
+        // than leaving the list's contents completely unvalidated (still
+        // backstopped by Firestore's 1 MiB document limit either way, but
+        // that's a much coarser and later line of defense).
+        function validStringList(list, maxLen, maxItemLen) {
+          return list is list && list.size() <= maxLen
+            && (list.size() < 1 || (list[0] is string && list[0].size() <= maxItemLen))
+            && (list.size() < 2 || (list[1] is string && list[1].size() <= maxItemLen))
+            && (list.size() < 3 || (list[2] is string && list[2].size() <= maxItemLen))
+            && (list.size() < 4 || (list[3] is string && list[3].size() <= maxItemLen))
+            && (list.size() < 5 || (list[4] is string && list[4].size() <= maxItemLen));
+        }
+
         function validEvent() {
           let event = request.resource.data;
           return event.keys().hasAll(['title', 'location', 'notes', 'startAt',
@@ -111,9 +127,13 @@ service cloud.firestore {
               && event.tag == event.tagId
               && event.flexible == (event.importance == 'flexible')
               && (event.sourceId == null || event.sourceId is string)
-              && (event.attachments == null || event.attachments is list)
+              && (event.attachments == null || validStringList(event.attachments, 5, 2000))
               && (event.repeat == null || event.repeat is map)
-              && (event.reminders == null || event.reminders is list)
+              && (event.reminders == null || (
+                event.reminders is list && event.reminders.size() <= 20
+                && event.reminders.hasOnly(['fiveMinutes', 'tenMinutes', 'fifteenMinutes',
+                  'thirtyMinutes', 'oneHour', 'oneDay'])
+              ))
               && (event.conflictGroupId == null || event.conflictGroupId is string)
               && (event.conflictRole == null || event.conflictRole in ['original', 'new'])
             ))

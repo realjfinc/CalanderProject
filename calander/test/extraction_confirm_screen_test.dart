@@ -36,6 +36,9 @@ class _FakeUploadStorage implements UploadStorage {
     called = true;
     return 'https://example.com/uploads/$fileName';
   }
+
+  @override
+  Future<void> deleteByUrl(String url) async {}
 }
 
 ExtractedEventDraft _draft() => ExtractedEventDraft(

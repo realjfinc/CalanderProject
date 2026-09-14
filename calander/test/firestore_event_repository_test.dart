@@ -3,8 +3,20 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:calander/models/calendar_event.dart';
 import 'package:calander/services/firestore_event_repository.dart';
+import 'package:calander/services/upload_storage.dart';
 
-CalendarEvent _event({String sourceId = 'g-1'}) {
+class _FakeUploadStorage implements UploadStorage {
+  final deletedUrls = <String>[];
+
+  @override
+  Future<String> upload({required bytes, required String fileName, String? contentType}) async =>
+      'https://example.com/uploads/$fileName';
+
+  @override
+  Future<void> deleteByUrl(String url) async => deletedUrls.add(url);
+}
+
+CalendarEvent _event({String sourceId = 'g-1', List<String>? attachments}) {
   final start = DateTime.utc(2026, 3, 1, 10);
   return CalendarEvent(
     id: '',
@@ -13,6 +25,7 @@ CalendarEvent _event({String sourceId = 'g-1'}) {
     end: start.add(const Duration(minutes: 30)),
     source: EventSource.google,
     sourceId: sourceId,
+    attachments: attachments,
   );
 }
 
@@ -60,6 +73,33 @@ void main() {
     await repo.deleteEvent(id);
 
     expect(await repo.watchEvents().first, isEmpty);
+  });
+
+  test('deleteEvent also deletes the event\'s attachments from storage', () async {
+    final firestore = FakeFirebaseFirestore();
+    final uploadStorage = _FakeUploadStorage();
+    final repo = FirestoreEventRepository(uid: 'user-1', firestore: firestore, uploadStorage: uploadStorage);
+    final id = await repo.addEvent(
+      _event(attachments: ['https://example.com/uploads/a.png', 'https://example.com/uploads/b.pdf']),
+    );
+
+    await repo.deleteEvent(id);
+
+    expect(uploadStorage.deletedUrls, [
+      'https://example.com/uploads/a.png',
+      'https://example.com/uploads/b.pdf',
+    ]);
+  });
+
+  test('deleteEvent does not touch storage for an event with no attachments', () async {
+    final firestore = FakeFirebaseFirestore();
+    final uploadStorage = _FakeUploadStorage();
+    final repo = FirestoreEventRepository(uid: 'user-1', firestore: firestore, uploadStorage: uploadStorage);
+    final id = await repo.addEvent(_event());
+
+    await repo.deleteEvent(id);
+
+    expect(uploadStorage.deletedUrls, isEmpty);
   });
 
   test('events are scoped per-user', () async {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../ui/legal/privacy_policy_screen.dart';
+import '../ui/legal/terms_screen.dart';
 import 'auth_service.dart';
 import 'auth_widgets.dart';
 
@@ -147,6 +148,13 @@ class _SignedOutFlowState extends State<SignedOutFlow> {
                 MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
               ),
               child: const Text('Privacy Policy'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TermsScreen()),
+              ),
+              child: const Text('Terms and Conditions'),
             ),
           ] else if (_page == AuthPage.resetSent) ...[
             const SizedBox(height: 24),
