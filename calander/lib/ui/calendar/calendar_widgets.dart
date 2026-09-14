@@ -30,45 +30,60 @@ class CalendarPage extends StatelessWidget {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      if (onBack != null)
-                        IconButton(
-                          onPressed: onBack,
-                          tooltip: 'Back',
-                          icon: const Icon(Icons.chevron_left),
-                        ),
-                      Text(
-                        'CALANDER',
-                        style: TextStyle(
-                          fontSize: 11,
-                          letterSpacing: 1,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Pinned outside the scroll view so the back button stays
+              // reachable without scrolling up, even after returning from a
+              // pushed screen with this same route's scroll position
+              // restored partway down (Flutter keeps a popped-back-to
+              // route's scroll offset as it was when it was left).
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                child: Row(
+                  children: [
+                    if (onBack != null)
+                      IconButton(
+                        onPressed: onBack,
+                        tooltip: 'Back',
+                        icon: const Icon(Icons.chevron_left),
                       ),
-                      const Spacer(),
-                      ...actions,
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
-                  const SizedBox(height: 24),
-                  ...children,
-                ],
+                    Text(
+                      'CALANDER',
+                      style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const Spacer(),
+                    ...actions,
+                  ],
+                ),
               ),
-            ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 8),
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(height: 24),
+                        ...children,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
