@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/calendar_event.dart';
 import '../../services/conflict_resolver.dart';
 import '../../services/event_repository.dart';
+import '../calendar/calendar_widgets.dart';
 
 /// Lets the user resolve each cross-source conflict `event_sync.dart`
 /// detected. Never auto-merges — every choice here is an explicit user
@@ -28,11 +29,14 @@ class ConflictsTab extends StatelessWidget {
           itemCount: pairs.length,
           itemBuilder: (context, index) => _ConflictCard(
             pair: pairs[index],
-            onResolve: (resolution) => resolveConflict(
-              repository: eventRepository,
-              original: pairs[index].original,
-              newEvent: pairs[index].newEvent,
-              resolution: resolution,
+            onResolve: (resolution) => runCalendarAction(
+              context,
+              () => resolveConflict(
+                repository: eventRepository,
+                original: pairs[index].original,
+                newEvent: pairs[index].newEvent,
+                resolution: resolution,
+              ),
             ),
           ),
         );
@@ -56,9 +60,15 @@ class _ConflictCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _EventSummary(label: 'Original (${pair.original.source.name})', event: pair.original),
+            _EventSummary(
+              label: 'Original (${pair.original.source.name})',
+              event: pair.original,
+            ),
             const Divider(),
-            _EventSummary(label: 'New (${pair.newEvent.source.name})', event: pair.newEvent),
+            _EventSummary(
+              label: 'New (${pair.newEvent.source.name})',
+              event: pair.newEvent,
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,

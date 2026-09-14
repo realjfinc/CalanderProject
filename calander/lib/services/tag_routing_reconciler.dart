@@ -17,7 +17,10 @@ import 'tag_routing_repository.dart';
 /// user can always override an automatic assignment: once they change it,
 /// there is nothing left for this reconciler to do to that event.
 class TagRoutingReconciler {
-  factory TagRoutingReconciler({required EventRepository events, required TagRoutingRepository routing}) {
+  factory TagRoutingReconciler({
+    required EventRepository events,
+    required TagRoutingRepository routing,
+  }) {
     return TagRoutingReconciler._(events, routing);
   }
 
@@ -30,22 +33,29 @@ class TagRoutingReconciler {
   StreamSubscription<TagRoutingSettings>? _settingsSubscription;
   List<CalendarEvent> _latestEvents = const [];
   TagRoutingSettings _latestSettings = const TagRoutingSettings();
+  final Set<String> _writingIds = {};
 
   void start() {
-    _settingsSubscription ??= _routing.watchSettings().listen((settings) {
-      _latestSettings = settings;
-      _reconcile();
-    }, onError: (Object error) {
-      _latestSettings = const TagRoutingSettings();
-      debugPrint('Tag-routing settings unavailable: $error');
-    });
-    _eventsSubscription ??= _events.watchEvents().listen((events) {
-      _latestEvents = events;
-      _reconcile();
-    }, onError: (Object error) {
-      _latestEvents = const [];
-      debugPrint('Tag-routing events unavailable: $error');
-    });
+    _settingsSubscription ??= _routing.watchSettings().listen(
+      (settings) {
+        _latestSettings = settings;
+        _reconcile();
+      },
+      onError: (Object error) {
+        _latestSettings = const TagRoutingSettings();
+        debugPrint('Tag-routing settings unavailable: $error');
+      },
+    );
+    _eventsSubscription ??= _events.watchEvents().listen(
+      (events) {
+        _latestEvents = events;
+        _reconcile();
+      },
+      onError: (Object error) {
+        _latestEvents = const [];
+        debugPrint('Tag-routing events unavailable: $error');
+      },
+    );
   }
 
   Future<void> stop() async {
@@ -60,10 +70,11 @@ class TagRoutingReconciler {
   void _reconcile() {
     if (!_latestSettings.autoTagEnabled) return;
     for (final event in _latestEvents) {
-      if (event.tag != null) continue;
+      if (event.tag != null || _writingIds.contains(event.id)) continue;
       if (event.status != EventStatus.active) continue;
       final matchedTag = resolveAutoTag(event, _latestSettings);
       if (matchedTag != null) {
+        _writingIds.add(event.id);
         unawaited(_applyTag(event.copyWith(tag: matchedTag)));
       }
     }
@@ -74,6 +85,8 @@ class TagRoutingReconciler {
       await _events.updateEvent(event);
     } catch (error) {
       debugPrint('Automatic tag update failed: $error');
+    } finally {
+      _writingIds.remove(event.id);
     }
   }
 }

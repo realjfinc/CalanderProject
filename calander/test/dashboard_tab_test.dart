@@ -157,6 +157,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Follow a team to see it here.'), findsOneWidget);
+    expect(find.text('Your teams. Your calendar.'), findsOneWidget);
+    expect(find.text('Find teams'), findsOneWidget);
   });
 }

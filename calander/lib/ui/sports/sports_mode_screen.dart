@@ -14,11 +14,13 @@ class SportsModeScreen extends StatelessWidget {
     required this.followedTeamsRepository,
     required this.eventRepository,
     this.apiClient,
+    this.bottomNavigationBar,
   });
 
   final FollowedTeamsRepository followedTeamsRepository;
   final EventRepository eventRepository;
   final TheSportsDbClient? apiClient;
+  final Widget? bottomNavigationBar;
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +28,16 @@ class SportsModeScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        bottomNavigationBar: bottomNavigationBar,
         appBar: AppBar(
-          title: const Text('Sports Mode'),
-          bottom: const TabBar(tabs: [Tab(text: 'Dashboard'), Tab(text: 'Follow Teams')]),
+          automaticallyImplyLeading: bottomNavigationBar == null,
+          title: const Text('Sports'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Dashboard'),
+              Tab(text: 'Follow Teams'),
+            ],
+          ),
         ),
         body: TabBarView(
           children: [
@@ -36,7 +45,10 @@ class SportsModeScreen extends StatelessWidget {
               followedTeamsRepository: followedTeamsRepository,
               eventRepository: eventRepository,
             ),
-            FollowTeamTab(repository: followedTeamsRepository, apiClient: apiClient),
+            FollowTeamTab(
+              repository: followedTeamsRepository,
+              apiClient: apiClient,
+            ),
           ],
         ),
       ),

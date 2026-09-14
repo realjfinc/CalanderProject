@@ -14,6 +14,7 @@ import '../../services/cloud_function_extraction_service.dart';
 import '../../services/upload_storage.dart';
 import '../../services/firestore_tag_routing_repository.dart';
 import '../../services/firestore_followed_teams_repository.dart';
+import '../../services/followed_teams_repository.dart';
 import '../extraction/upload_event_screen.dart';
 import '../legal/privacy_policy_screen.dart';
 import '../sports/sports_mode_screen.dart';
@@ -32,10 +33,12 @@ class CalendarHomeScreen extends StatefulWidget {
     required this.auth,
     this.events,
     this.tags,
+    this.followedTeams,
   });
   final AuthService auth;
   final CalendarEventRepository? events;
   final TagRepository? tags;
+  final FollowedTeamsRepository? followedTeams;
   @override
   State<CalendarHomeScreen> createState() => _CalendarHomeScreenState();
 }
@@ -53,8 +56,12 @@ class _CalendarHomeScreenState extends State<CalendarHomeScreen> {
     child: Navigator(
       key: _navigator,
       onGenerateRoute: (_) => MaterialPageRoute<void>(
-        builder: (_) =>
-            _CalendarDashboard(auth: widget.auth, events: _events, tags: _tags),
+        builder: (_) => _CalendarDashboard(
+          auth: widget.auth,
+          events: _events,
+          tags: _tags,
+          followedTeams: widget.followedTeams,
+        ),
       ),
     ),
   );
@@ -67,10 +74,12 @@ class _CalendarDashboard extends StatefulWidget {
     required this.auth,
     required this.events,
     required this.tags,
+    this.followedTeams,
   });
   final AuthService auth;
   final CalendarEventRepository events;
   final TagRepository tags;
+  final FollowedTeamsRepository? followedTeams;
   @override
   State<_CalendarDashboard> createState() => _CalendarDashboardState();
 }
@@ -84,6 +93,9 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
   int _tab = 0;
   String? _filter;
   String? _tagError;
+  late final FollowedTeamsRepository _followedTeams =
+      widget.followedTeams ??
+      FirestoreFollowedTeamsRepository(uid: widget.auth.account!.uid);
 
   @override
   void initState() {
@@ -176,13 +188,13 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
   );
 
   void _destination(int value) {
-    if (value == 2) {
+    if (value == 3) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => TagManagementScreen(repository: widget.tags),
         ),
       );
-    } else if (value == 3) {
+    } else if (value == 4) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => _CalendarSettings(
@@ -197,12 +209,42 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
     }
   }
 
+  Widget _navigation() => NavigationBar(
+    selectedIndex: _tab,
+    onDestinationSelected: _destination,
+    destinations: const [
+      NavigationDestination(
+        icon: Icon(Icons.calendar_month_outlined),
+        selectedIcon: Icon(Icons.calendar_month),
+        label: 'Calendar',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.sports_outlined),
+        selectedIcon: Icon(Icons.sports),
+        label: 'Sports',
+      ),
+      NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+      NavigationDestination(icon: Icon(Icons.sell_outlined), label: 'Tags'),
+      NavigationDestination(
+        icon: Icon(Icons.settings_outlined),
+        label: 'Settings',
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) => StreamBuilder<List<EventTag>>(
     stream: _tagStream,
     builder: (context, tagSnapshot) => StreamBuilder<EventSnapshot>(
       stream: _eventStream,
       builder: (context, snapshot) {
+        if (_tab == 1) {
+          return SportsModeScreen(
+            followedTeamsRepository: _followedTeams,
+            eventRepository: widget.events,
+            bottomNavigationBar: _navigation(),
+          );
+        }
         final tags = tagSnapshot.data ?? <EventTag>[];
         final events = snapshot.data?.events ?? <CalendarEvent>[];
         final dayEvents = events.where((e) => e.occursOn(_selected)).toList()
@@ -221,14 +263,14 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
           weekStart.month,
           weekStart.day + 6,
         );
-        final title = _tab == 1
+        final title = _tab == 2
             ? 'Search calendar'
             : switch (_mode) {
                 CalendarMode.month => monthLabel(_selected),
                 CalendarMode.week => 'Your week',
                 CalendarMode.day => dayLabel(_selected),
               };
-        final subtitle = _tab == 1
+        final subtitle = _tab == 2
             ? 'Find your next moment.'
             : switch (_mode) {
                 CalendarMode.month => 'A little structure. More possibility.',
@@ -252,30 +294,11 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
           actions: [
             IconButton(
               tooltip: 'Search calendar',
-              onPressed: () => setState(() => _tab = 1),
+              onPressed: () => setState(() => _tab = 2),
               icon: const Icon(Icons.search),
             ),
           ],
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _tab,
-            onDestinationSelected: _destination,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.calendar_month_outlined),
-                selectedIcon: Icon(Icons.calendar_month),
-                label: 'Calendar',
-              ),
-              NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
-              NavigationDestination(
-                icon: Icon(Icons.sell_outlined),
-                label: 'Tags',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.settings_outlined),
-                label: 'Settings',
-              ),
-            ],
-          ),
+          bottomNavigationBar: _navigation(),
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
@@ -444,7 +467,7 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
                 padding: EdgeInsets.all(24),
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (_tab == 1)
+            else if (_tab == 2)
               ..._searchResults(events, tags)
             else ...[
               Text(
@@ -941,7 +964,9 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
         padding: 0,
         child: ListTile(
           title: const Text('Add Event from Upload'),
-          subtitle: const Text('Photo, PDF, or a link — review before it saves'),
+          subtitle: const Text(
+            'Photo, PDF, or a link — review before it saves',
+          ),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.push(
             context,
@@ -949,7 +974,9 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
               builder: (_) => UploadEventScreen(
                 extractionService: CloudFunctionExtractionService(),
                 eventRepository: widget.events,
-                uploadStorage: FirebaseUploadStorage(uid: widget.auth.account!.uid),
+                uploadStorage: FirebaseUploadStorage(
+                  uid: widget.auth.account!.uid,
+                ),
               ),
             ),
           ),
@@ -968,7 +995,9 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
               builder: (_) => TagRoutingScreen(
                 eventRepository: widget.events,
                 tagRepository: widget.tags,
-                routingRepository: FirestoreTagRoutingRepository(uid: widget.auth.account!.uid),
+                routingRepository: FirestoreTagRoutingRepository(
+                  uid: widget.auth.account!.uid,
+                ),
               ),
             ),
           ),
@@ -987,37 +1016,6 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
               builder: (_) =>
                   ProviderSyncScreen(eventRepository: widget.events),
             ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 12),
-      CalendarPanel(
-        padding: 0,
-        child: ListTile(
-          title: const Text('Sports Mode'),
-          subtitle: const Text('Follow teams and sync their upcoming games'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SportsModeScreen(
-                followedTeamsRepository: FirestoreFollowedTeamsRepository(uid: widget.auth.account!.uid),
-                eventRepository: widget.events,
-              ),
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 12),
-      CalendarPanel(
-        padding: 0,
-        child: ListTile(
-          title: const Text('Privacy Policy'),
-          subtitle: const Text('What we collect, and how AI extraction works'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
           ),
         ),
       ),

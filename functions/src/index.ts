@@ -11,6 +11,7 @@ import type { ExtractRequest } from "./extraction/types";
 import { FirestoreEventRepository } from "./shared/eventRepository";
 import { fetchUpcomingEventsRaw } from "./sports/theSportsDbClient";
 import { pollUpcomingGames } from "./sports/pollUpcomingGames";
+import { limitExtraction } from "./shared/rateLimiter";
 
 initializeApp();
 
@@ -31,6 +32,8 @@ export const extractEvent = onCall({ secrets: [anthropicApiKey] }, async (reques
     throw new HttpsError("invalid-argument", "Request must include a type and timezone.");
   }
 
+  // Keep this outside the extraction catch so resource-exhausted reaches the UI.
+  await limitExtraction(request.auth.uid);
   const llmClient = new AnthropicLlmClient(anthropicApiKey.value());
   try {
     return await runExtraction(data, llmClient);

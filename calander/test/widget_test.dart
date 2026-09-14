@@ -208,8 +208,8 @@ void main() {
       expect(find.text('Manage Tags'), findsOneWidget);
       expect(find.text('Add Event from Upload'), findsOneWidget);
       expect(find.text('Tag Routing'), findsOneWidget);
-      expect(find.text('Sports Mode'), findsOneWidget);
-      expect(find.text('Welcome To Calander'), findsNothing);
+      expect(find.text('Sports Mode'), findsNothing);
+      expect(find.text('Welcome'), findsNothing);
       await tapText(tester, 'Log out');
       expect(find.text('Welcome To Calander'), findsOneWidget);
       expect(find.text('Log out'), findsNothing);

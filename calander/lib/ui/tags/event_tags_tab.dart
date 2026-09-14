@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../calendar/calendar_widgets.dart';
+
 import '../../models/calendar_event.dart';
 import '../../models/event_tag.dart';
 import '../../services/event_repository.dart';
@@ -9,12 +11,20 @@ import '../../services/tag_repository.dart';
 /// event's current tag — direct user action always wins, whether or not
 /// the tag currently showing was set automatically.
 class EventTagsTab extends StatelessWidget {
-  const EventTagsTab({super.key, required this.eventRepository, required this.tagRepository});
+  const EventTagsTab({
+    super.key,
+    required this.eventRepository,
+    required this.tagRepository,
+  });
 
   final EventRepository eventRepository;
   final TagRepository tagRepository;
 
-  Future<void> _pickTag(BuildContext context, CalendarEvent event, List<EventTag> tags) async {
+  Future<void> _pickTag(
+    BuildContext context,
+    CalendarEvent event,
+    List<EventTag> tags,
+  ) async {
     final selected = await showModalBottomSheet<_TagChoice>(
       context: context,
       builder: (context) => SafeArea(
@@ -28,7 +38,10 @@ class EventTagsTab extends StatelessWidget {
             ),
             for (final tag in tags)
               ListTile(
-                leading: CircleAvatar(backgroundColor: Color(tag.colorValue), radius: 10),
+                leading: CircleAvatar(
+                  backgroundColor: Color(tag.colorValue),
+                  radius: 10,
+                ),
                 title: Text(tag.name),
                 onTap: () => Navigator.of(context).pop(_TagChoice(tag.id)),
               ),
@@ -37,7 +50,11 @@ class EventTagsTab extends StatelessWidget {
       ),
     );
     if (selected != null) {
-      await eventRepository.updateEvent(event.copyWith(tag: selected.tagId));
+      if (!context.mounted) return;
+      await runCalendarAction(
+        context,
+        () => eventRepository.updateEvent(event.copyWith(tag: selected.tagId)),
+      );
     }
   }
 
@@ -70,7 +87,10 @@ class EventTagsTab extends StatelessWidget {
                   trailing: ActionChip(
                     avatar: tag == null
                         ? null
-                        : CircleAvatar(backgroundColor: Color(tag.colorValue), radius: 8),
+                        : CircleAvatar(
+                            backgroundColor: Color(tag.colorValue),
+                            radius: 8,
+                          ),
                     label: Text(tag?.name ?? 'Untagged'),
                     onPressed: () => _pickTag(context, event, tags),
                   ),

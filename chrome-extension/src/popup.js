@@ -1,13 +1,14 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { getFirestore, collection, addDoc, Timestamp, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, doc, runTransaction, Timestamp, serverTimestamp } from "firebase/firestore";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 
 import { firebaseConfig } from "./firebaseConfig.js";
 import { splitDataUrl } from "./dataUrl.js";
 import { currentTimezoneOffsetLabel } from "./timezoneOffset.js";
 import { buildExtractionRequest, buildScreenshotEvent } from "./eventPayload.js";
+import { nextWriteQuota } from "./writeQuota.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -111,7 +112,8 @@ confirmForm.addEventListener("submit", async (event) => {
 
     const start = Timestamp.fromDate(new Date(eventFields.start));
     const end = Timestamp.fromDate(new Date(eventFields.end));
-    await addDoc(collection(db, "users", user.uid, "events"), {
+    const eventRef = doc(collection(db, "users", user.uid, "events"));
+    const eventData = {
       ...eventFields,
       start,
       end,
@@ -121,6 +123,18 @@ confirmForm.addEventListener("submit", async (event) => {
       endAt: end,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+    };
+    const quotaRef = doc(db, 'clientWriteLimits', user.uid);
+    await runTransaction(db, async transaction => {
+      const previous = (await transaction.get(quotaRef)).data();
+      const quota = nextWriteQuota(previous);
+      transaction.set(eventRef, eventData);
+      transaction.set(quotaRef, {
+        count: quota.count,
+        windowStart: quota.reset ? serverTimestamp() : previous.windowStart,
+        paths: [eventRef.path],
+        updatedAt: serverTimestamp(),
+      });
     });
 
     statusText.textContent = "Saved!";
