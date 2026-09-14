@@ -3,6 +3,10 @@
 Mobile-first Flutter calendar and account screens based on `../design/CalanderProject.png`.
 Light and dark themes follow the device setting. Inter is bundled locally with its license.
 
+See [`../README.md`](../README.md) for a screenshot tour and feature overview,
+and [`../PRIVACY.md`](../PRIVACY.md) for the privacy policy (also in-app at
+Settings > Privacy Policy).
+
 ## Included
 
 - Welcome, email/password signup, login, password reset, and email verification.
@@ -12,8 +16,8 @@ Light and dark themes follow the device setting. Inter is bundled locally with i
 - Password-reset links open Firebase's hosted reset page; return to the app to log in.
 - Verified accounts open their calendar: Month, Week, Day, Search, and event details.
 - Create, edit, and delete private events with all-day/multi-day support, location, notes, tags, and Fixed/Flexible importance.
-- Tags, Add Event from Upload, Tag Routing, Provider Sync, Sports Mode, and
-  logout are accessible from Settings.
+- Tags, Add Event from Upload, Tag Routing, Provider Sync, Sports Mode,
+  Privacy Policy, and logout are accessible from Settings.
 - Google and Apple buttons are placeholders only.
 
 ## Firebase
@@ -250,8 +254,10 @@ flutter build web --no-pub
 
 The auth widget tests use a fake authentication service and do not send email.
 They cover account validation, verification gating, resend cooldown, password reset,
-logout, and narrow layouts with enlarged text. Preview renders are saved under
-`build/auth-previews/`. The tag-system tests use `fake_cloud_firestore` and an
+logout, and narrow layouts with enlarged text. Preview renders (welcome, login,
+privacy policy, calendar, and settings, in both themes) are saved as real
+screenshots under `build/auth-previews/` — see the root README's Screenshots
+section for how. The tag-system tests use `fake_cloud_firestore` and an
 in-memory repository fake, and cover default-tag initialization (including
 idempotency and non-resurrection of deleted defaults), add/edit/delete, and
 per-user scoping. The extraction tests use fakes for the extraction service,
