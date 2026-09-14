@@ -229,8 +229,8 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
         label: 'Calendar',
       ),
       NavigationDestination(
-        icon: Icon(Icons.sports_outlined),
-        selectedIcon: Icon(Icons.sports),
+        icon: Icon(Icons.scoreboard_outlined),
+        selectedIcon: Icon(Icons.scoreboard),
         label: 'Sports',
       ),
       NavigationDestination(icon: Icon(Icons.search), label: 'Search'),

@@ -104,21 +104,33 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
                         ),
                         title: Text(team.name),
                         subtitle: Text(team.league),
-                        trailing: followedIds.contains(team.id)
-                            ? OutlinedButton(
-                                onPressed: () => runCalendarAction(
-                                  context,
-                                  () => widget.repository.unfollowTeam(team.id),
+                        trailing: SizedBox(
+                          // The app theme gives every OutlinedButton a
+                          // full-width, 52-tall minimum size (right for a
+                          // standalone primary action, wrong for a compact
+                          // trailing action inside a ListTile -- left
+                          // themed, it fights the tile's layout and paints
+                          // an overflow artifact on top of the row).
+                          // _compactButtonStyle overrides that here.
+                          height: 36,
+                          child: followedIds.contains(team.id)
+                              ? OutlinedButton(
+                                  style: _compactButtonStyle(context),
+                                  onPressed: () => runCalendarAction(
+                                    context,
+                                    () => widget.repository.unfollowTeam(team.id),
+                                  ),
+                                  child: const Text('Unfollow'),
+                                )
+                              : ElevatedButton(
+                                  style: _compactButtonStyle(context),
+                                  onPressed: () => runCalendarAction(
+                                    context,
+                                    () => widget.repository.followTeam(team),
+                                  ),
+                                  child: const Text('Follow'),
                                 ),
-                                child: const Text('Unfollow'),
-                              )
-                            : ElevatedButton(
-                                onPressed: () => runCalendarAction(
-                                  context,
-                                  () => widget.repository.followTeam(team),
-                                ),
-                                child: const Text('Follow'),
-                              ),
+                        ),
                       ),
                 ],
               ),
@@ -129,3 +141,12 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
     );
   }
 }
+
+/// A compact size for Follow/Unfollow's ListTile.trailing slot, overriding
+/// the app theme's full-width-52 default (meant for standalone primary
+/// buttons) which would otherwise overflow the row.
+ButtonStyle _compactButtonStyle(BuildContext context) => ButtonStyle(
+  minimumSize: const WidgetStatePropertyAll(Size(0, 36)),
+  padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 14)),
+  textStyle: WidgetStatePropertyAll(Theme.of(context).textTheme.bodyMedium),
+);
