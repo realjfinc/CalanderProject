@@ -93,7 +93,7 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Never miss a game.'), findsNothing);
-    expect(find.text('Sports Mode'), findsOneWidget);
+    expect(find.text('Sports'), findsOneWidget);
     expect(find.text('Dashboard'), findsOneWidget);
     expect(find.text('Follow Teams'), findsOneWidget);
   });

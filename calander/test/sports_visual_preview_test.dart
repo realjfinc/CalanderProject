@@ -205,7 +205,7 @@ void main() {
           home: RepaintBoundary(
             key: key,
             child: Scaffold(
-              appBar: AppBar(title: const Text('Sports Mode')),
+              appBar: AppBar(title: const Text('Sports')),
               body: DashboardTab(followedTeamsRepository: teams, eventRepository: events),
             ),
           ),
