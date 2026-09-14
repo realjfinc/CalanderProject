@@ -15,6 +15,7 @@ import '../../services/upload_storage.dart';
 import '../../services/firestore_tag_routing_repository.dart';
 import '../../services/firestore_followed_teams_repository.dart';
 import '../extraction/upload_event_screen.dart';
+import '../legal/privacy_policy_screen.dart';
 import '../sports/sports_mode_screen.dart';
 import '../tags/tag_management_screen.dart';
 import '../tags/tag_routing_screen.dart';
@@ -1004,6 +1005,19 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
                 eventRepository: widget.events,
               ),
             ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      CalendarPanel(
+        padding: 0,
+        child: ListTile(
+          title: const Text('Privacy Policy'),
+          subtitle: const Text('What we collect, and how AI extraction works'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
           ),
         ),
       ),

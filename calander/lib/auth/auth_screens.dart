@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../ui/legal/privacy_policy_screen.dart';
 import 'auth_service.dart';
 import 'auth_widgets.dart';
 
@@ -138,6 +139,14 @@ class _SignedOutFlowState extends State<SignedOutFlow> {
             OutlinedButton(
               onPressed: () => _go(AuthPage.login),
               child: const Text('I already have an account'),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+              ),
+              child: const Text('Privacy Policy'),
             ),
           ] else if (_page == AuthPage.resetSent) ...[
             const SizedBox(height: 24),
