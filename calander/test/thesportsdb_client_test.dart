@@ -5,11 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('mapSportsDbTeam', () {
     test('maps a team resource', () {
+      // `strBadge` (not `strTeamBadge`) is the field the real API actually
+      // returns, confirmed against searchteams.php, lookupteam.php, and
+      // lookup_all_teams.php live -- `strTeamBadge` never appears in any
+      // real response.
       final team = mapSportsDbTeam({
         'idTeam': '133604',
         'strTeam': 'Arsenal',
         'strLeague': 'English Premier League',
-        'strTeamBadge': 'https://example.com/badge.png',
+        'strBadge': 'https://example.com/badge.png',
+        'strColour1': '#EF0107',
       });
 
       expect(team, isNotNull);
@@ -17,6 +22,12 @@ void main() {
       expect(team.name, 'Arsenal');
       expect(team.league, 'English Premier League');
       expect(team.badgeUrl, 'https://example.com/badge.png');
+      expect(team.accentColorHex, '#EF0107');
+    });
+
+    test('leaves accentColorHex null when the API has no strColour1', () {
+      final team = mapSportsDbTeam({'idTeam': '1', 'strTeam': 'No Colour FC'});
+      expect(team!.accentColorHex, isNull);
     });
 
     test('returns null without an id', () {
