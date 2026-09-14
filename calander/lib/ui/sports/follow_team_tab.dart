@@ -4,6 +4,7 @@ import '../../models/followed_team.dart';
 import '../../services/followed_teams_repository.dart';
 import '../../services/thesportsdb_client.dart';
 import '../calendar/calendar_widgets.dart';
+import 'sports_style.dart';
 
 /// Search for a team and follow/unfollow it.
 class FollowTeamTab extends StatefulWidget {
@@ -95,6 +96,12 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
                   if (_results != null)
                     for (final team in _results!)
                       ListTile(
+                        leading: TeamBadge(
+                          name: team.name,
+                          badgeUrl: team.badgeUrl,
+                          color: parseHexColor(team.accentColorHex),
+                          size: 36,
+                        ),
                         title: Text(team.name),
                         subtitle: Text(team.league),
                         trailing: followedIds.contains(team.id)

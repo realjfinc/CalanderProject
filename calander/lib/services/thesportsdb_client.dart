@@ -58,7 +58,12 @@ FollowedTeam? mapSportsDbTeam(Map<String, dynamic> json) {
     id: id,
     name: json['strTeam'] as String? ?? 'Unknown team',
     league: json['strLeague'] as String? ?? '',
-    badgeUrl: json['strTeamBadge'] as String?,
+    // The API's actual field is `strBadge` -- confirmed against the live
+    // API (searchteams.php, lookupteam.php, and lookup_all_teams.php all
+    // agree); `strTeamBadge` doesn't exist in any real response, so this
+    // silently mapped to null for every team before this fix.
+    badgeUrl: json['strBadge'] as String?,
+    accentColorHex: json['strColour1'] as String?,
   );
 }
 

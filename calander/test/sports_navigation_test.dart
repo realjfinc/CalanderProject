@@ -1,6 +1,7 @@
 import 'package:calander/services/firestore_event_repository.dart';
 import 'package:calander/services/firestore_tag_repository.dart';
 import 'package:calander/services/firestore_followed_teams_repository.dart';
+import 'package:calander/services/firestore_sports_onboarding_repository.dart';
 import 'package:calander/ui/calendar/calendar_home_screen.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,13 @@ void main() {
     (tester) async {
       final db = FakeFirebaseFirestore();
       final auth = TestAuth()..setUser(verified: true);
+      // This test is about bottom-nav structure, not the first-time
+      // onboarding gate (covered separately in sports_mode_screen_test.dart
+      // and sports_onboarding_screen_test.dart) -- pre-complete it so
+      // tapping "Sports" goes straight to the tabs, same as any returning
+      // user.
+      final sportsOnboarding = FirestoreSportsOnboardingRepository(uid: 'test-user', firestore: db);
+      await sportsOnboarding.completeOnboarding();
       await tester.pumpWidget(
         MaterialApp(
           home: CalendarHomeScreen(
@@ -24,6 +32,7 @@ void main() {
               uid: 'test-user',
               firestore: db,
             ),
+            sportsOnboarding: sportsOnboarding,
           ),
         ),
       );

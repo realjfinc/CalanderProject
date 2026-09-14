@@ -15,6 +15,8 @@ import '../../services/upload_storage.dart';
 import '../../services/firestore_tag_routing_repository.dart';
 import '../../services/firestore_followed_teams_repository.dart';
 import '../../services/followed_teams_repository.dart';
+import '../../services/firestore_sports_onboarding_repository.dart';
+import '../../services/sports_onboarding_repository.dart';
 import '../extraction/upload_event_screen.dart';
 import '../legal/privacy_policy_screen.dart';
 import '../sports/sports_mode_screen.dart';
@@ -34,11 +36,13 @@ class CalendarHomeScreen extends StatefulWidget {
     this.events,
     this.tags,
     this.followedTeams,
+    this.sportsOnboarding,
   });
   final AuthService auth;
   final CalendarEventRepository? events;
   final TagRepository? tags;
   final FollowedTeamsRepository? followedTeams;
+  final SportsOnboardingRepository? sportsOnboarding;
   @override
   State<CalendarHomeScreen> createState() => _CalendarHomeScreenState();
 }
@@ -61,6 +65,7 @@ class _CalendarHomeScreenState extends State<CalendarHomeScreen> {
           events: _events,
           tags: _tags,
           followedTeams: widget.followedTeams,
+          sportsOnboarding: widget.sportsOnboarding,
         ),
       ),
     ),
@@ -75,11 +80,13 @@ class _CalendarDashboard extends StatefulWidget {
     required this.events,
     required this.tags,
     this.followedTeams,
+    this.sportsOnboarding,
   });
   final AuthService auth;
   final CalendarEventRepository events;
   final TagRepository tags;
   final FollowedTeamsRepository? followedTeams;
+  final SportsOnboardingRepository? sportsOnboarding;
   @override
   State<_CalendarDashboard> createState() => _CalendarDashboardState();
 }
@@ -96,6 +103,9 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
   late final FollowedTeamsRepository _followedTeams =
       widget.followedTeams ??
       FirestoreFollowedTeamsRepository(uid: widget.auth.account!.uid);
+  late final SportsOnboardingRepository _sportsOnboarding =
+      widget.sportsOnboarding ??
+      FirestoreSportsOnboardingRepository(uid: widget.auth.account!.uid);
 
   @override
   void initState() {
@@ -242,6 +252,7 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
           return SportsModeScreen(
             followedTeamsRepository: _followedTeams,
             eventRepository: widget.events,
+            onboardingRepository: _sportsOnboarding,
             bottomNavigationBar: _navigation(),
           );
         }
@@ -1016,6 +1027,19 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
               builder: (_) =>
                   ProviderSyncScreen(eventRepository: widget.events),
             ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      CalendarPanel(
+        padding: 0,
+        child: ListTile(
+          title: const Text('Privacy Policy'),
+          subtitle: const Text('What we collect, and how AI extraction works'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
           ),
         ),
       ),
