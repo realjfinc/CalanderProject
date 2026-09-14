@@ -17,17 +17,23 @@ CalendarEvent _event({String sourceId = 'g-1'}) {
 }
 
 void main() {
-  test('addEvent persists an event with sourceId and leaves tag null', () async {
-    final firestore = FakeFirebaseFirestore();
-    final repo = FirestoreEventRepository(uid: 'user-1', firestore: firestore);
+  test(
+    'addEvent persists an event with sourceId and leaves tag null',
+    () async {
+      final firestore = FakeFirebaseFirestore();
+      final repo = FirestoreEventRepository(
+        uid: 'user-1',
+        firestore: firestore,
+      );
 
-    final id = await repo.addEvent(_event());
+      final id = await repo.addEvent(_event());
 
-    final events = await repo.watchEvents().first;
-    expect(events.single.id, id);
-    expect(events.single.sourceId, 'g-1');
-    expect(events.single.tag, isNull);
-  });
+      final events = await repo.watchEvents().first;
+      expect(events.single.id, id);
+      expect(events.single.sourceId, 'g-1');
+      expect(events.single.tag, isNull);
+    },
+  );
 
   test('updateEvent overwrites fields on an existing document', () async {
     final firestore = FakeFirebaseFirestore();
@@ -35,9 +41,13 @@ void main() {
     final id = await repo.addEvent(_event());
 
     final events = await repo.watchEvents().first;
-    await repo.updateEvent(events.single.copyWith(status: EventStatus.pendingConflict));
+    await repo.updateEvent(
+      events.single.copyWith(status: EventStatus.pendingConflict),
+    );
 
-    final updated = await repo.watchEvents().first;
+    final updated = await repo.watchEvents().firstWhere(
+      (events) => events.single.status == EventStatus.pendingConflict,
+    );
     expect(updated.single.id, id);
     expect(updated.single.status, EventStatus.pendingConflict);
   });
@@ -54,7 +64,10 @@ void main() {
 
   test('events are scoped per-user', () async {
     final firestore = FakeFirebaseFirestore();
-    await FirestoreEventRepository(uid: 'user-a', firestore: firestore).addEvent(_event());
+    await FirestoreEventRepository(
+      uid: 'user-a',
+      firestore: firestore,
+    ).addEvent(_event());
 
     final repoB = FirestoreEventRepository(uid: 'user-b', firestore: firestore);
     expect(await repoB.watchEvents().first, isEmpty);

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/calendar_event.dart';
 import 'event_repository.dart';
+import 'firestore_write_limiter.dart';
 
 /// One user-scoped collection shared by calendar editing and provider sync.
 class FirestoreEventRepository implements CalendarEventRepository {
@@ -11,6 +12,10 @@ class FirestoreEventRepository implements CalendarEventRepository {
           .doc(uid)
           .collection('events');
   final CollectionReference<Map<String, dynamic>> _events;
+  late final _limiter = FirestoreWriteLimiter(
+    firestore: _events.firestore,
+    uid: _events.parent!.id,
+  );
 
   // Do not order by one schema's timestamp field: that would silently omit
   // documents written by the other schema before this merge.
@@ -43,11 +48,17 @@ class FirestoreEventRepository implements CalendarEventRepository {
     final data = event.toMap();
     if (isNew) {
       data['createdAt'] = FieldValue.serverTimestamp();
-      await _events.doc(event.id).set(data);
+      final ref = _events.doc(event.id);
+      await _limiter.commit([
+        ref.path,
+      ], (transaction) => transaction.set(ref, data));
     } else {
       // Update preserves existing creation timestamps and cannot resurrect a
       // remotely deleted event. Legacy provider records may lack createdAt.
-      await _events.doc(event.id).update(data);
+      final ref = _events.doc(event.id);
+      await _limiter.commit([
+        ref.path,
+      ], (transaction) => transaction.update(ref, data));
     }
   }
 
@@ -61,7 +72,13 @@ class FirestoreEventRepository implements CalendarEventRepository {
   @override
   Future<void> updateEvent(CalendarEvent event) => save(event, isNew: false);
   @override
-  Future<void> deleteEvent(String eventId) => _events.doc(eventId).delete();
+  Future<void> deleteEvent(String eventId) {
+    final ref = _events.doc(eventId);
+    return _limiter.commit([
+      ref.path,
+    ], (transaction) => transaction.delete(ref));
+  }
+
   @override
   Future<void> delete(String id) => deleteEvent(id);
 }

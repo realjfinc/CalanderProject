@@ -2,24 +2,62 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Each changed document must be named in the same atomic quota update.
+    // Server time controls the one-hour window; clients cannot reset it early.
+    function validWriteQuota(userId) {
+      let path = /databases/$(database)/documents/clientWriteLimits/$(userId);
+      let next = getAfter(path).data;
+      return request.auth != null && request.auth.uid == userId
+        && next.keys().hasOnly(['windowStart', 'count', 'paths', 'updatedAt'])
+        && next.paths is list && next.paths.size() > 0 && next.paths.size() <= 20
+        && next.count is int && next.count > 0 && next.count <= 100
+        && next.windowStart is timestamp && next.updatedAt == request.time
+        && (
+          (!exists(path) && next.windowStart == request.time && next.count == next.paths.size())
+          || (exists(path) && (
+            (request.time >= get(path).data.windowStart + duration.value(1, 'h')
+              && next.windowStart == request.time && next.count == next.paths.size())
+            || (request.time < get(path).data.windowStart + duration.value(1, 'h')
+              && next.windowStart == get(path).data.windowStart
+              && next.count == get(path).data.count + next.paths.size())
+          ))
+        );
+    }
+
+    function limitedWrite(userId, collectionId, documentId) {
+      return validWriteQuota(userId)
+        && ('users/' + userId + '/' + collectionId + '/' + documentId)
+          in getAfter(/databases/$(database)/documents/clientWriteLimits/$(userId)).data.paths;
+    }
+
+    match /clientWriteLimits/{userId} {
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if validWriteQuota(userId);
+      allow delete: if false;
+    }
+
     match /users/{userId} {
       // Existing tag and initialization access stays scoped to the owner.
       match /tags/{tagId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if limitedWrite(userId, 'tags', tagId);
       }
 
       match /meta/{metaId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if limitedWrite(userId, 'meta', metaId);
       }
 
       // Per-user settings, including tag-routing rules (Step 5).
       match /settings/{settingId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if limitedWrite(userId, 'settings', settingId);
       }
 
       // Per-user followed sports teams (Step 7).
       match /followedTeams/{teamId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if limitedWrite(userId, 'followedTeams', teamId);
       }
 
       // Events synced from followed sports teams (Step 7) go through this
@@ -83,9 +121,11 @@ service cloud.firestore {
             && event.updatedAt == request.time;
         }
 
-        allow read, delete: if owner();
-        allow create: if owner() && validEvent() && request.resource.data.createdAt == request.time;
-        allow update: if owner() && validEvent()
+        allow read: if owner();
+        allow delete: if owner() && limitedWrite(userId, 'events', eventId);
+        allow create: if owner() && limitedWrite(userId, 'events', eventId)
+          && validEvent() && request.resource.data.createdAt == request.time;
+        allow update: if owner() && limitedWrite(userId, 'events', eventId) && validEvent()
           && (('createdAt' in resource.data && request.resource.data.createdAt == resource.data.createdAt)
             || (!('createdAt' in resource.data) && !('createdAt' in request.resource.data)));
       }

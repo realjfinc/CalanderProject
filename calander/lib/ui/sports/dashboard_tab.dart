@@ -27,13 +27,55 @@ class DashboardTab extends StatelessWidget {
     return StreamBuilder<List<FollowedTeam>>(
       stream: followedTeamsRepository.watchFollowedTeams(),
       builder: (context, teamsSnapshot) {
+        if (teamsSnapshot.hasError) {
+          return const Center(
+            child: Text('Unable to load your teams. Please try again later.'),
+          );
+        }
+        if (!teamsSnapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final teams = teamsSnapshot.data ?? const [];
         if (teams.isEmpty) {
-          return const Center(child: Text('Follow a team to see it here.'));
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.sports, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Your teams. Your calendar.',
+                    style: Theme.of(context).textTheme.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Follow your favorite teams to bring their games into your calendar.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () =>
+                        DefaultTabController.of(context).animateTo(1),
+                    child: const Text('Find teams'),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
         return StreamBuilder<List<CalendarEvent>>(
           stream: eventRepository.watchEvents(),
           builder: (context, eventsSnapshot) {
+            if (eventsSnapshot.hasError) {
+              return const Center(
+                child: Text(
+                  'Unable to load upcoming games. Please try again later.',
+                ),
+              );
+            }
             final events = eventsSnapshot.data ?? const [];
             return ListView.builder(
               itemCount: teams.length,
@@ -66,12 +108,10 @@ class DashboardTab extends StatelessWidget {
 CalendarEvent? nextGameForTeam(FollowedTeam team, List<CalendarEvent> events) {
   final now = DateTime.now().toUtc();
   final teamName = team.name.toLowerCase();
-  final upcoming =
-      events.where((event) {
-          if (event.source != EventSource.sports) return false;
-          if (!event.start.isAfter(now)) return false;
-          return event.title.toLowerCase().contains(teamName);
-        }).toList()
-        ..sort((a, b) => a.start.compareTo(b.start));
+  final upcoming = events.where((event) {
+    if (event.source != EventSource.sports) return false;
+    if (!event.start.isAfter(now)) return false;
+    return event.title.toLowerCase().contains(teamName);
+  }).toList()..sort((a, b) => a.start.compareTo(b.start));
   return upcoming.isEmpty ? null : upcoming.first;
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/calendar_event.dart';
 import '../../models/event_tag.dart';
+import '../../services/firestore_write_limiter.dart';
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({
@@ -90,10 +91,7 @@ class CalendarPanel extends StatelessWidget {
     color: tint ?? Theme.of(context).colorScheme.surface,
     borderRadius: BorderRadius.circular(16),
     clipBehavior: Clip.antiAlias,
-    child: Padding(
-      padding: EdgeInsets.all(padding),
-      child: child,
-    ),
+    child: Padding(padding: EdgeInsets.all(padding), child: child),
   );
 }
 
@@ -202,6 +200,7 @@ class EventCard extends StatelessWidget {
 }
 
 String calendarError(Object error) {
+  if (error is RateLimitException) return error.message;
   if (error is FirebaseException) {
     return switch (error.code) {
       'permission-denied' => 'Your calendar could not be accessed. Check that you’re signed in and try again.',
@@ -212,4 +211,18 @@ String calendarError(Object error) {
     };
   }
   return 'Something went wrong. Please try again.';
+}
+
+/// Shared by actions without a dedicated inline form error.
+Future<void> runCalendarAction(
+  BuildContext context,
+  Future<void> Function() action,
+) async {
+  try {
+    await action();
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(calendarError(error))));
+  }
 }

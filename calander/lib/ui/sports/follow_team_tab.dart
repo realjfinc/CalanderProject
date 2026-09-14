@@ -3,10 +3,15 @@ import 'package:flutter/material.dart';
 import '../../models/followed_team.dart';
 import '../../services/followed_teams_repository.dart';
 import '../../services/thesportsdb_client.dart';
+import '../calendar/calendar_widgets.dart';
 
 /// Search for a team and follow/unfollow it.
 class FollowTeamTab extends StatefulWidget {
-  const FollowTeamTab({super.key, required this.repository, required this.apiClient});
+  const FollowTeamTab({
+    super.key,
+    required this.repository,
+    required this.apiClient,
+  });
 
   final FollowedTeamsRepository repository;
   final TheSportsDbClient apiClient;
@@ -36,11 +41,12 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
     });
     try {
       final results = await widget.apiClient.searchTeams(query);
+      if (!mounted) return;
       setState(() => _results = results);
     } catch (error) {
-      setState(() => _error = 'Search failed: $error');
+      if (mounted) setState(() => _error = 'Search failed: $error');
     } finally {
-      setState(() => _searching = false);
+      if (mounted) setState(() => _searching = false);
     }
   }
 
@@ -49,7 +55,9 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
     return StreamBuilder<List<FollowedTeam>>(
       stream: widget.repository.watchFollowedTeams(),
       builder: (context, followedSnapshot) {
-        final followedIds = (followedSnapshot.data ?? const []).map((t) => t.id).toSet();
+        final followedIds = (followedSnapshot.data ?? const [])
+            .map((t) => t.id)
+            .toSet();
 
         return Column(
           children: [
@@ -60,20 +68,27 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
                   Expanded(
                     child: TextField(
                       controller: _queryController,
-                      decoration: const InputDecoration(labelText: 'Search for a team'),
+                      decoration: const InputDecoration(
+                        labelText: 'Search for a team',
+                      ),
                       onSubmitted: (_) => _search(),
                     ),
                   ),
                   IconButton(
                     icon: _searching
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator())
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(),
+                          )
                         : const Icon(Icons.search),
                     onPressed: _searching ? null : _search,
                   ),
                 ],
               ),
             ),
-            if (_error != null) Padding(padding: const EdgeInsets.all(8), child: Text(_error!)),
+            if (_error != null)
+              Padding(padding: const EdgeInsets.all(8), child: Text(_error!)),
             Expanded(
               child: ListView(
                 children: [
@@ -84,11 +99,17 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
                         subtitle: Text(team.league),
                         trailing: followedIds.contains(team.id)
                             ? OutlinedButton(
-                                onPressed: () => widget.repository.unfollowTeam(team.id),
+                                onPressed: () => runCalendarAction(
+                                  context,
+                                  () => widget.repository.unfollowTeam(team.id),
+                                ),
                                 child: const Text('Unfollow'),
                               )
                             : ElevatedButton(
-                                onPressed: () => widget.repository.followTeam(team),
+                                onPressed: () => runCalendarAction(
+                                  context,
+                                  () => widget.repository.followTeam(team),
+                                ),
                                 child: const Text('Follow'),
                               ),
                       ),

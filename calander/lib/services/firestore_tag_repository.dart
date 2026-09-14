@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/event_tag.dart';
 import 'tag_repository.dart';
+import 'firestore_write_limiter.dart';
 
 /// Default color values (ARGB) assigned to the built-in tags, in the same
 /// order as [kDefaultTagNames].
@@ -27,20 +28,30 @@ const List<String> _kDefaultTagIds = [
 ///                                      default-tag creation runs exactly
 ///                                      once per account.
 class FirestoreTagRepository implements TagRepository {
-  factory FirestoreTagRepository({required String uid, FirebaseFirestore? firestore}) {
-    return FirestoreTagRepository._(uid, firestore ?? FirebaseFirestore.instance);
+  factory FirestoreTagRepository({
+    required String uid,
+    FirebaseFirestore? firestore,
+  }) {
+    return FirestoreTagRepository._(
+      uid,
+      firestore ?? FirebaseFirestore.instance,
+    );
   }
 
   FirestoreTagRepository._(this._uid, this._firestore);
 
   final String _uid;
   final FirebaseFirestore _firestore;
+  late final _limiter = FirestoreWriteLimiter(firestore: _firestore, uid: _uid);
 
   CollectionReference<Map<String, dynamic>> get _tagsRef =>
       _firestore.collection('users').doc(_uid).collection('tags');
 
-  DocumentReference<Map<String, dynamic>> get _tagInitMetaRef =>
-      _firestore.collection('users').doc(_uid).collection('meta').doc('tagInit');
+  DocumentReference<Map<String, dynamic>> get _tagInitMetaRef => _firestore
+      .collection('users')
+      .doc(_uid)
+      .collection('meta')
+      .doc('tagInit');
 
   @override
   Stream<List<EventTag>> watchTags() {
@@ -59,31 +70,43 @@ class FirestoreTagRepository implements TagRepository {
       return;
     }
 
-    final batch = _firestore.batch();
-    for (var i = 0; i < kDefaultTagNames.length; i++) {
-      final tagRef = _tagsRef.doc(_kDefaultTagIds[i]);
-      batch.set(
-        tagRef,
-        EventTag(
-          id: _kDefaultTagIds[i],
-          name: kDefaultTagNames[i],
-          colorValue: _kDefaultTagColors[i],
-          isDefault: true,
-        ).toMap(),
-        SetOptions(merge: true),
-      );
-    }
-    batch.set(_tagInitMetaRef, {
-      'initialized': true,
-      'initializedAt': FieldValue.serverTimestamp(),
+    final paths = [
+      for (final id in _kDefaultTagIds) _tagsRef.doc(id).path,
+      _tagInitMetaRef.path,
+    ];
+    await _limiter.commit(paths, (batch) {
+      for (var i = 0; i < kDefaultTagNames.length; i++) {
+        final tagRef = _tagsRef.doc(_kDefaultTagIds[i]);
+        batch.set(
+          tagRef,
+          EventTag(
+            id: _kDefaultTagIds[i],
+            name: kDefaultTagNames[i],
+            colorValue: _kDefaultTagColors[i],
+            isDefault: true,
+          ).toMap(),
+          SetOptions(merge: true),
+        );
+      }
+      batch.set(_tagInitMetaRef, {
+        'initialized': true,
+        'initializedAt': FieldValue.serverTimestamp(),
+      });
     });
-    await batch.commit();
   }
 
   @override
-  Future<EventTag> addTag({required String name, required int colorValue}) async {
-    final docRef = await _tagsRef.add(
-      EventTag(id: '', name: name, colorValue: colorValue).toMap(),
+  Future<EventTag> addTag({
+    required String name,
+    required int colorValue,
+  }) async {
+    final docRef = _tagsRef.doc();
+    await _limiter.commit(
+      [docRef.path],
+      (transaction) => transaction.set(
+        docRef,
+        EventTag(id: '', name: name, colorValue: colorValue).toMap(),
+      ),
     );
     return EventTag(id: docRef.id, name: name, colorValue: colorValue);
   }
@@ -94,11 +117,15 @@ class FirestoreTagRepository implements TagRepository {
     if (name != null) updates['name'] = name;
     if (colorValue != null) updates['colorValue'] = colorValue;
     if (updates.isEmpty) return;
-    await _tagsRef.doc(tagId).update(updates);
+    final ref = _tagsRef.doc(tagId);
+    await _limiter.commit([
+      ref.path,
+    ], (transaction) => transaction.update(ref, updates));
   }
 
   @override
   Future<void> deleteTag(String tagId) async {
-    await _tagsRef.doc(tagId).delete();
+    final ref = _tagsRef.doc(tagId);
+    await _limiter.commit([ref.path], (transaction) => transaction.delete(ref));
   }
 }

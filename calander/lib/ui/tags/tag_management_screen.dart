@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/event_tag.dart';
 import '../../services/tag_repository.dart';
+import '../calendar/calendar_widgets.dart';
 
 /// Fixed palette offered when creating or editing a tag.
 const List<int> kTagColorPalette = [
@@ -43,18 +44,21 @@ class _TagManagementScreenState extends State<TagManagementScreen> {
     );
     if (result == null) return;
 
-    if (existing == null) {
-      await widget.repository.addTag(
-        name: result.name,
-        colorValue: result.colorValue,
-      );
-    } else {
-      await widget.repository.updateTag(
-        existing.id,
-        name: result.name,
-        colorValue: result.colorValue,
-      );
-    }
+    if (!mounted) return;
+    await runCalendarAction(context, () async {
+      if (existing == null) {
+        await widget.repository.addTag(
+          name: result.name,
+          colorValue: result.colorValue,
+        );
+      } else {
+        await widget.repository.updateTag(
+          existing.id,
+          name: result.name,
+          colorValue: result.colorValue,
+        );
+      }
+    });
   }
 
   Future<void> _confirmDelete(EventTag tag) async {
@@ -76,7 +80,11 @@ class _TagManagementScreenState extends State<TagManagementScreen> {
       ),
     );
     if (confirmed == true) {
-      await widget.repository.deleteTag(tag.id);
+      if (!mounted) return;
+      await runCalendarAction(
+        context,
+        () => widget.repository.deleteTag(tag.id),
+      );
     }
   }
 
@@ -91,7 +99,9 @@ class _TagManagementScreenState extends State<TagManagementScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (initSnapshot.hasError) {
-            return Center(child: Text('Failed to load tags: ${initSnapshot.error}'));
+            return Center(
+              child: Text('Failed to load tags: ${initSnapshot.error}'),
+            );
           }
           return StreamBuilder<List<EventTag>>(
             stream: widget.repository.watchTags(),
@@ -104,7 +114,9 @@ class _TagManagementScreenState extends State<TagManagementScreen> {
               }
               final tags = snapshot.data!;
               if (tags.isEmpty) {
-                return const Center(child: Text('No tags yet. Tap + to add one.'));
+                return const Center(
+                  child: Text('No tags yet. Tap + to add one.'),
+                );
               }
               return ListView.builder(
                 itemCount: tags.length,
