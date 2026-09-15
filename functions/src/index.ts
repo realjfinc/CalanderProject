@@ -86,9 +86,19 @@ export const pollSportsEvents = onSchedule("every 6 hours", async () => {
   const firestore = getFirestore();
 
   const result = await pollUpcomingGames({
+    // Not `firestore.collection("users").get()`: the app never writes a
+    // document directly at `users/{uid}` -- only to subcollections under
+    // it (events, tags, followedTeams, ...). A collection query only
+    // returns documents that actually exist, so that silently enumerates
+    // zero users even with real data underneath, and this poll would find
+    // nothing to do every run. Querying the `followedTeams` collection
+    // group and taking each document's grandparent id finds exactly the
+    // users who have at least one followed team -- also the only users
+    // this poll does anything for anyway.
     listUserIds: async () => {
-      const snapshot = await firestore.collection("users").get();
-      return snapshot.docs.map((doc) => doc.id);
+      const snapshot = await firestore.collectionGroup("followedTeams").get();
+      const uids = new Set(snapshot.docs.map((doc) => doc.ref.parent.parent!.id));
+      return [...uids].sort();
     },
     listFollowedTeamIds: async (uid) => {
       const snapshot = await firestore

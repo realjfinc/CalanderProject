@@ -117,7 +117,19 @@ def run(credentials_path: Optional[str] = None) -> PollResult:
     http_session = requests.Session()
 
     result = poll_upcoming_games(
-        list_user_ids=lambda: [doc.id for doc in db.collection("users").stream()],
+        # Not `db.collection("users").stream()`: the app never writes a
+        # document directly at `users/{uid}` -- only to subcollections
+        # under it (events, tags, followedTeams, ...). Firestore only
+        # returns documents that actually exist from a collection query, so
+        # that would silently enumerate zero users even with real data
+        # underneath, and this poll would find nothing to do every run.
+        # Querying the `followedTeams` collection group and taking each
+        # document's grandparent id finds exactly the users who have at
+        # least one followed team -- which is also the only users this poll
+        # does anything for anyway.
+        list_user_ids=lambda: sorted(
+            {doc.reference.parent.parent.id for doc in db.collection_group("followedTeams").stream()}
+        ),
         list_followed_team_ids=lambda uid: [
             doc.id for doc in db.collection("users").document(uid).collection("followedTeams").stream()
         ],
