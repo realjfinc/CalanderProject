@@ -41,6 +41,9 @@ class _NoopEventRepository implements EventRepository {
 class _NoopUploadStorage implements UploadStorage {
   @override
   Future<String> upload({required bytes, required String fileName, String? contentType}) async => 'url';
+
+  @override
+  Future<void> deleteByUrl(String url) async {}
 }
 
 Widget _harness(EventExtractionService service) {

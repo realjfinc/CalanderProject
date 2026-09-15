@@ -1,8 +1,26 @@
 import 'package:calander/models/calendar_event.dart';
 import 'package:calander/services/thesportsdb_client.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 void main() {
+  group('malformed responses', () {
+    test('searchTeams throws SportsApiException instead of a raw parse error on a malformed body', () async {
+      final client = MockClient((request) async => http.Response('not json', 200));
+      final sportsClient = TheSportsDbClient(httpClient: client);
+
+      await expectLater(sportsClient.searchTeams('arsenal'), throwsA(isA<SportsApiException>()));
+    });
+
+    test('fetchUpcomingEventsRaw throws SportsApiException instead of a raw parse error on a malformed body', () async {
+      final client = MockClient((request) async => http.Response('not json', 200));
+      final sportsClient = TheSportsDbClient(httpClient: client);
+
+      await expectLater(sportsClient.fetchUpcomingEventsRaw('133604'), throwsA(isA<SportsApiException>()));
+    });
+  });
+
   group('mapSportsDbTeam', () {
     test('maps a team resource', () {
       // `strBadge` (not `strTeamBadge`) is the field the real API actually

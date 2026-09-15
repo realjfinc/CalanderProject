@@ -43,7 +43,12 @@ class GoogleCalendarAdapter implements ProviderAdapter {
       );
     }
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw GoogleCalendarSyncException('Google Calendar returned an unexpected response.');
+    }
     final items = (body['items'] as List?) ?? const [];
     return items.cast<Map<String, dynamic>>().map(mapGoogleEvent).whereType<CalendarEvent>().toList();
   }

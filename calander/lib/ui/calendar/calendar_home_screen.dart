@@ -19,6 +19,7 @@ import '../../services/firestore_sports_onboarding_repository.dart';
 import '../../services/sports_onboarding_repository.dart';
 import '../extraction/upload_event_screen.dart';
 import '../legal/privacy_policy_screen.dart';
+import '../legal/terms_screen.dart';
 import '../sports/sports_mode_screen.dart';
 import '../tags/tag_management_screen.dart';
 import '../tags/tag_routing_screen.dart';
@@ -932,6 +933,42 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
     }
   }
 
+  Future<void> _confirmDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'This permanently deletes your account, calendar, tags, followed '
+          'teams, and uploaded attachments. This can’t be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.auth.deleteAccount();
+    } catch (error) {
+      if (mounted) setState(() => _error = authErrorMessage(error));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => CalendarPage(
     title: 'Settings',
@@ -1044,6 +1081,19 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
         ),
       ),
       const SizedBox(height: 12),
+      CalendarPanel(
+        padding: 0,
+        child: ListTile(
+          title: const Text('Terms and Conditions'),
+          subtitle: const Text('Arbitration, user content, and DMCA policy'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TermsScreen()),
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
       const CalendarPanel(
         child: Text('Appearance follows your device’s light or dark setting.'),
       ),
@@ -1056,6 +1106,14 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
       FilledButton(
         onPressed: _busy ? null : _logout,
         child: Text(_busy ? 'Logging out…' : 'Log out'),
+      ),
+      const SizedBox(height: 12),
+      TextButton(
+        onPressed: _busy ? null : _confirmDeleteAccount,
+        style: TextButton.styleFrom(
+          foregroundColor: Theme.of(context).colorScheme.error,
+        ),
+        child: const Text('Delete Account'),
       ),
     ],
   );

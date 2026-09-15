@@ -5,6 +5,7 @@ the Cloud Function's TS `EventRepository` -- same shape, so
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Protocol
 
 from canonical_event import CanonicalEvent, CanonicalEventData
@@ -18,12 +19,23 @@ class EventRepository(Protocol):
     def update_event(self, event: CanonicalEvent) -> None: ...
 
 
+def _parse_iso(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
 def _to_firestore_data(event: CanonicalEventData) -> dict:
+    # Not raw ISO strings: the Firestore client only turns a real
+    # `datetime` into a native Timestamp field on write (matching the
+    # Cloud Function's TS `new Date(event.start)`). The Flutter client's
+    # `CalendarEvent.fromMap()` only accepts a Timestamp for `start`/`end`
+    # -- anything else (including a string) silently falls back to
+    # `DateTime.now()`, which is why a poll-written game would render with
+    # today's time and never show up as "upcoming" in the Sports dashboard.
     return {
         "title": event.title,
         "location": event.location,
-        "start": event.start,
-        "end": event.end,
+        "start": _parse_iso(event.start),
+        "end": _parse_iso(event.end),
         "source": event.source,
         "sourceId": event.source_id,
         "status": event.status,

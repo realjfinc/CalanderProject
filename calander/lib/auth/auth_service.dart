@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
@@ -25,11 +26,17 @@ abstract class AuthService extends ChangeNotifier {
   Future<void> sendVerification();
   Future<void> refreshAccount();
   Future<void> logOut();
+
+  /// Permanently deletes the signed-in user's account and all their data
+  /// (see the `deleteAccount` Cloud Function), then signs them out. There's
+  /// no undo -- callers are expected to confirm with the user first.
+  Future<void> deleteAccount();
 }
 
 class FirebaseAuthService extends AuthService {
-  FirebaseAuthService({FirebaseAuth? firebaseAuth})
-    : _auth = firebaseAuth ?? FirebaseAuth.instance {
+  FirebaseAuthService({FirebaseAuth? firebaseAuth, FirebaseFunctions? functions})
+    : _auth = firebaseAuth ?? FirebaseAuth.instance,
+      _functions = functions ?? FirebaseFunctions.instance {
     _subscription = _auth.userChanges().listen(
       (_) {
         if (!_creatingAccount) _publishAccount();
@@ -43,6 +50,7 @@ class FirebaseAuthService extends AuthService {
     );
   }
   final FirebaseAuth _auth;
+  final FirebaseFunctions _functions;
   late final StreamSubscription<User?> _subscription;
   AuthAccount? _account;
   bool _loading = true;
@@ -151,6 +159,14 @@ class FirebaseAuthService extends AuthService {
 
   @override
   Future<void> logOut() async {
+    await _auth.signOut();
+    _notice = null;
+    _publishAccount();
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    await _functions.httpsCallable('deleteAccount').call<void>();
     await _auth.signOut();
     _notice = null;
     _publishAccount();

@@ -1,8 +1,26 @@
 import 'package:calander/models/calendar_event.dart';
 import 'package:calander/services/google_calendar_adapter.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 void main() {
+  group('fetchEvents', () {
+    test('throws GoogleCalendarSyncException instead of a raw parse error on a malformed body', () async {
+      final client = MockClient((request) async => http.Response('not json', 200));
+      final adapter = GoogleCalendarAdapter(accessToken: 'token', httpClient: client);
+
+      await expectLater(adapter.fetchEvents(), throwsA(isA<GoogleCalendarSyncException>()));
+    });
+
+    test('throws GoogleCalendarSyncException when the body is valid JSON but not an object', () async {
+      final client = MockClient((request) async => http.Response('[1, 2, 3]', 200));
+      final adapter = GoogleCalendarAdapter(accessToken: 'token', httpClient: client);
+
+      await expectLater(adapter.fetchEvents(), throwsA(isA<GoogleCalendarSyncException>()));
+    });
+  });
+
   test('maps a timed event, normalizing to UTC', () {
     final event = mapGoogleEvent({
       'id': 'g-1',

@@ -87,3 +87,50 @@ test("propagates a normalization failure when the LLM can't find a start time", 
     ExtractionNormalizationError,
   );
 });
+
+test("image extraction rejects a disallowed mime type", async () => {
+  const llm = new FakeLlmClient(okResponse);
+  await assert.rejects(
+    () =>
+      extractEvent(
+        { type: "image", data: "ZmFrZQ==", mimeType: "application/x-msdownload", timezone: "UTC" },
+        llm,
+      ),
+    InvalidExtractRequestError,
+  );
+  assert.equal(llm.receivedInputs.length, 0);
+});
+
+test("image extraction rejects an oversized payload before it reaches the LLM client", async () => {
+  const llm = new FakeLlmClient(okResponse);
+  const oversized = "A".repeat(10_000_001);
+  await assert.rejects(
+    () => extractEvent({ type: "image", data: oversized, mimeType: "image/png", timezone: "UTC" }, llm),
+    InvalidExtractRequestError,
+  );
+  assert.equal(llm.receivedInputs.length, 0);
+});
+
+test("pdf extraction rejects an oversized payload", async () => {
+  const llm = new FakeLlmClient(okResponse);
+  const oversized = "A".repeat(20_000_001);
+  await assert.rejects(
+    () => extractEvent({ type: "pdf", data: oversized, timezone: "UTC" }, llm),
+    InvalidExtractRequestError,
+  );
+});
+
+test("link extraction rejects an implausibly long url before fetching it", async () => {
+  const llm = new FakeLlmClient(okResponse);
+  let fetchCalled = false;
+  const fakeFetchLinkText = async () => {
+    fetchCalled = true;
+    return "unreachable";
+  };
+  const longUrl = "https://example.com/" + "a".repeat(2048);
+  await assert.rejects(
+    () => extractEvent({ type: "link", url: longUrl, timezone: "UTC" }, llm, fakeFetchLinkText),
+    InvalidExtractRequestError,
+  );
+  assert.equal(fetchCalled, false);
+});
