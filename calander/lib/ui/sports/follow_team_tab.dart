@@ -95,11 +95,12 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
                       controller: _queryController,
                       decoration: const InputDecoration(
                         labelText: 'Search for a team',
-                        // TheSportsDB's search matches best on a team's
-                        // full official name -- "Lakers" alone can miss
-                        // the NBA team entirely, where "Los Angeles
-                        // Lakers" finds it reliably.
-                        hintText: 'Full name works best, e.g. Los Angeles Lakers',
+                        // A nickname works for NBA/NFL/NHL/MLB teams
+                        // (matched locally, see major_league_teams.dart);
+                        // every other sport needs the full official name --
+                        // TheSportsDB's own search doesn't do substring or
+                        // nickname matching.
+                        hintText: 'Try "Lakers", or the full name for other sports',
                       ),
                       onSubmitted: (_) => _search(),
                     ),

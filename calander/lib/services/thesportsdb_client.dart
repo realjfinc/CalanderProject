@@ -4,6 +4,14 @@ import 'package:http/http.dart' as http;
 
 import '../models/calendar_event.dart';
 import '../models/followed_team.dart';
+import 'major_league_teams.dart';
+
+/// How many local nickname matches from [majorLeagueTeams] get resolved
+/// to live data per search -- broad queries like "New" match a dozen-plus
+/// teams (Knicks, Giants, Jets, Mets, Yankees, Rangers, Islanders...);
+/// this keeps one search from firing off that many `lookupteam.php` calls
+/// at once.
+const _maxRosterMatches = 8;
 
 class SportsApiException implements Exception {
   SportsApiException(this.message);
@@ -25,7 +33,29 @@ class TheSportsDbClient {
 
   String get _basePath => '/api/v1/json/$apiKey';
 
+  /// Searches by exact-ish team name (TheSportsDB's own `searchteams.php`,
+  /// the only text-search endpoint this free key has -- confirmed against
+  /// the live API to match close to the *full official name* and nothing
+  /// looser: "Lakers" alone returns an unrelated NCAA team, not "Los
+  /// Angeles Lakers"), merged with any local nickname matches from
+  /// [majorLeagueTeams] so a query like "Lakers" or "Cowboys" still finds
+  /// the right team. Results are deduped by id, direct API matches first.
   Future<List<FollowedTeam>> searchTeams(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return const [];
+
+    final direct = await _searchTeamsDirect(trimmed);
+    final rosterMatches = await _searchMajorLeagueRoster(trimmed);
+
+    final seenIds = <String>{};
+    final results = <FollowedTeam>[];
+    for (final team in [...direct, ...rosterMatches]) {
+      if (seenIds.add(team.id)) results.add(team);
+    }
+    return results;
+  }
+
+  Future<List<FollowedTeam>> _searchTeamsDirect(String query) async {
     final uri = Uri.https('www.thesportsdb.com', '$_basePath/searchteams.php', {'t': query});
     final response = await _httpClient.get(uri);
     if (response.statusCode != 200) {
@@ -39,6 +69,38 @@ class TheSportsDbClient {
     }
     final teams = (body['teams'] as List?) ?? const [];
     return teams.cast<Map<String, dynamic>>().map(mapSportsDbTeam).whereType<FollowedTeam>().toList();
+  }
+
+  /// Local, case-insensitive substring match against the verified major-
+  /// league roster, each hit resolved to live data via [_lookupTeamById]
+  /// (`lookupteam.php`, a single-item lookup -- unlike the free key's list
+  /// endpoints, this one reliably returns real per-id data). A lookup
+  /// failure for one match is dropped rather than failing the whole
+  /// search -- the direct API results above stand on their own regardless.
+  Future<List<FollowedTeam>> _searchMajorLeagueRoster(String query) async {
+    final lower = query.toLowerCase();
+    final matches = majorLeagueTeams
+        .where((team) => team.name.toLowerCase().contains(lower))
+        .take(_maxRosterMatches)
+        .toList();
+    if (matches.isEmpty) return const [];
+
+    final resolved = await Future.wait(matches.map((team) => _lookupTeamById(team.idTeam)));
+    return resolved.whereType<FollowedTeam>().toList();
+  }
+
+  Future<FollowedTeam?> _lookupTeamById(String id) async {
+    final uri = Uri.https('www.thesportsdb.com', '$_basePath/lookupteam.php', {'id': id});
+    try {
+      final response = await _httpClient.get(uri);
+      if (response.statusCode != 200) return null;
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final teams = (body['teams'] as List?) ?? const [];
+      if (teams.isEmpty) return null;
+      return mapSportsDbTeam(teams.first as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Raw upcoming-events JSON for one team, as returned by the API --

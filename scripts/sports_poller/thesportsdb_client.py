@@ -51,8 +51,9 @@ def _get(http, url: str, params: Optional[dict] = None):
 # for via search_all_leagues.php -- confirmed by hand against the live API.
 # That endpoint hard-caps at 5 leagues per sport regardless of how many
 # really exist, so this is "everything the free key will show us", not a
-# claim of full coverage (there's no NBA/NFL/NHL/MLB data behind this key
-# at all -- that requires TheSportsDB's paid tier).
+# claim of full coverage. (NBA/NFL/NHL/MLB *do* have real data behind this
+# key -- see team_catalog.MAJOR_US_LEAGUES -- they just don't reliably show
+# up in this particular capped sample.)
 OTHER_CATALOG_SPORTS = [
     "Basketball",
     "Ice Hockey",
@@ -97,14 +98,23 @@ def fetch_leagues_for_sport(
 
 
 def fetch_team_ids_for_league(
-    league_id: str, api_key: str = DEFAULT_API_KEY, session: Optional[requests.Session] = None
+    league_name: str, api_key: str = DEFAULT_API_KEY, session: Optional[requests.Session] = None
 ) -> list[str]:
-    """Every team's id in one league (`lookup_all_teams.php`)."""
+    """Every team's id in one league, by league name (`search_all_teams.php`).
+
+    Confirmed by hand against the live API: `lookup_all_teams.php?id=<id>`
+    doesn't work on this free test key at all -- it returns the exact same
+    fixed sample of 24 English League One teams for *any* id, including a
+    garbage id or no id at all. `search_all_teams.php?l=<league name>` is
+    the endpoint that actually returns real, league-specific rosters on
+    this key (capped at 10 teams per league -- still real data, just not
+    a full roster).
+    """
     http = session or requests
-    url = f"https://www.thesportsdb.com/api/v1/json/{api_key}/lookup_all_teams.php"
-    response = _get(http, url, params={"id": league_id})
+    url = f"https://www.thesportsdb.com/api/v1/json/{api_key}/search_all_teams.php"
+    response = _get(http, url, params={"l": league_name})
     if response.status_code != 200:
-        raise SportsApiError(f"Lookup-teams request failed with status {response.status_code}")
+        raise SportsApiError(f"Search-teams request failed with status {response.status_code}")
     body = response.json() or {}
     return [team["idTeam"] for team in (body.get("teams") or []) if isinstance(team.get("idTeam"), str)]
 

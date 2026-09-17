@@ -213,7 +213,9 @@ def run(credentials_path: Optional[str] = None) -> tuple[PollResult, CacheResult
         list_all_team_ids=lambda: list_all_team_ids(
             fetch_all_leagues=lambda: fetch_all_leagues(session=http_session),
             fetch_leagues_for_sport=lambda sport: fetch_leagues_for_sport(sport, session=http_session),
-            fetch_team_ids_for_league=lambda league_id: fetch_team_ids_for_league(league_id, session=http_session),
+            fetch_team_ids_for_league=lambda league_name: fetch_team_ids_for_league(
+                league_name, session=http_session
+            ),
             other_sports=OTHER_CATALOG_SPORTS,
         ),
         fetch_upcoming_events_raw_fn=lambda team_id: fetch_upcoming_events_raw(
