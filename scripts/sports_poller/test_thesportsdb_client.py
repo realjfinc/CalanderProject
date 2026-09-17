@@ -56,7 +56,7 @@ def test_fetch_team_ids_for_league_retries_through_a_transient_429(monkeypatch):
     monkeypatch.setattr(thesportsdb_client.time, "sleep", lambda seconds: None)
     session = _FlakyRateLimitedSession(fail_times=2, body={"teams": [{"idTeam": "133604"}]})
 
-    team_ids = fetch_team_ids_for_league("4328", session=session)
+    team_ids = fetch_team_ids_for_league("English Premier League", session=session)
 
     assert team_ids == ["133604"]
     assert session.call_count == 3
@@ -69,7 +69,7 @@ def test_fetch_team_ids_for_league_gives_up_after_repeated_429s(monkeypatch):
     session = _FlakyRateLimitedSession(fail_times=99, body={"teams": []})
 
     with pytest.raises(SportsApiError):
-        fetch_team_ids_for_league("4328", session=session)
+        fetch_team_ids_for_league("English Premier League", session=session)
 
 
 def test_fetch_all_leagues_returns_only_soccer_leagues():
@@ -126,7 +126,7 @@ def test_fetch_leagues_for_sport_returns_an_empty_list_when_the_api_has_none():
 def test_fetch_team_ids_for_league_returns_only_string_ids():
     session = _FakeSession(
         {
-            "https://www.thesportsdb.com/api/v1/json/3/lookup_all_teams.php": _FakeResponse(
+            "https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php": _FakeResponse(
                 body={
                     "teams": [
                         {"idTeam": "133604", "strTeam": "Arsenal"},
@@ -137,10 +137,10 @@ def test_fetch_team_ids_for_league_returns_only_string_ids():
         }
     )
 
-    team_ids = fetch_team_ids_for_league("4328", session=session)
+    team_ids = fetch_team_ids_for_league("English Premier League", session=session)
 
     assert team_ids == ["133604"]
-    assert session.calls[0][1] == {"id": "4328"}
+    assert session.calls[0][1] == {"l": "English Premier League"}
 
 
 def test_maps_a_game_using_str_timestamp_as_the_utc_start_time():

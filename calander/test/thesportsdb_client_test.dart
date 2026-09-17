@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:calander/models/calendar_event.dart';
 import 'package:calander/services/thesportsdb_client.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +20,98 @@ void main() {
       final sportsClient = TheSportsDbClient(httpClient: client);
 
       await expectLater(sportsClient.fetchUpcomingEventsRaw('133604'), throwsA(isA<SportsApiException>()));
+    });
+  });
+
+  group('searchTeams', () {
+    test('resolves a major-league nickname the direct API search misses, via the local roster', () async {
+      final client = MockClient((request) async {
+        if (request.url.path.endsWith('searchteams.php')) {
+          expect(request.url.queryParameters['t'], 'Lakers');
+          return http.Response(jsonEncode({'teams': null}), 200);
+        }
+        if (request.url.path.endsWith('lookupteam.php')) {
+          expect(request.url.queryParameters['id'], '134867');
+          return http.Response(
+            jsonEncode({
+              'teams': [
+                {'idTeam': '134867', 'strTeam': 'Los Angeles Lakers', 'strLeague': 'NBA'},
+              ],
+            }),
+            200,
+          );
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      });
+      final sportsClient = TheSportsDbClient(httpClient: client);
+
+      final results = await sportsClient.searchTeams('Lakers');
+
+      expect(results, hasLength(1));
+      expect(results.single.id, '134867');
+      expect(results.single.name, 'Los Angeles Lakers');
+    });
+
+    test('merges direct API results with roster matches, deduped by id', () async {
+      final client = MockClient((request) async {
+        if (request.url.path.endsWith('searchteams.php')) {
+          return http.Response(
+            jsonEncode({
+              'teams': [
+                {'idTeam': '134867', 'strTeam': 'Los Angeles Lakers', 'strLeague': 'NBA'},
+              ],
+            }),
+            200,
+          );
+        }
+        if (request.url.path.endsWith('lookupteam.php')) {
+          return http.Response(
+            jsonEncode({
+              'teams': [
+                {'idTeam': '134867', 'strTeam': 'Los Angeles Lakers', 'strLeague': 'NBA'},
+              ],
+            }),
+            200,
+          );
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      });
+      final sportsClient = TheSportsDbClient(httpClient: client);
+
+      final results = await sportsClient.searchTeams('Lakers');
+
+      expect(results, hasLength(1));
+    });
+
+    test('a failed roster lookup is dropped, not thrown, so the direct results still return', () async {
+      final client = MockClient((request) async {
+        if (request.url.path.endsWith('searchteams.php')) {
+          return http.Response(jsonEncode({'teams': null}), 200);
+        }
+        if (request.url.path.endsWith('lookupteam.php')) {
+          return http.Response('', 500);
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      });
+      final sportsClient = TheSportsDbClient(httpClient: client);
+
+      final results = await sportsClient.searchTeams('Lakers');
+
+      expect(results, isEmpty);
+    });
+
+    test('a query matching no team, nickname or otherwise, returns no results', () async {
+      final client = MockClient((request) async {
+        if (request.url.path.endsWith('searchteams.php')) {
+          return http.Response(jsonEncode({'teams': null}), 200);
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      });
+      final sportsClient = TheSportsDbClient(httpClient: client);
+
+      final results = await sportsClient.searchTeams('zzz-not-a-team');
+
+      expect(results, isEmpty);
     });
   });
 
