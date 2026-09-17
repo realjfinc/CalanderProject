@@ -220,7 +220,9 @@ class _SportsOnboardingScreenState extends State<SportsOnboardingScreen>
                       Expanded(
                         child: TextField(
                           controller: _searchController,
-                          decoration: const InputDecoration(hintText: 'Any team, any sport'),
+                          decoration: const InputDecoration(
+                            hintText: 'Any team, any sport -- full name works best',
+                          ),
                           onSubmitted: (_) => _search(),
                         ),
                       ),

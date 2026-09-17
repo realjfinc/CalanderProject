@@ -95,6 +95,11 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
                       controller: _queryController,
                       decoration: const InputDecoration(
                         labelText: 'Search for a team',
+                        // TheSportsDB's search matches best on a team's
+                        // full official name -- "Lakers" alone can miss
+                        // the NBA team entirely, where "Los Angeles
+                        // Lakers" finds it reliably.
+                        hintText: 'Full name works best, e.g. Los Angeles Lakers',
                       ),
                       onSubmitted: (_) => _search(),
                     ),
