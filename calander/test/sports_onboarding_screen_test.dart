@@ -5,8 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
+import 'package:calander/models/calendar_event.dart';
 import 'package:calander/models/followed_team.dart';
+import 'package:calander/services/event_repository.dart';
 import 'package:calander/services/followed_teams_repository.dart';
+import 'package:calander/services/sports_games_cache_repository.dart';
 import 'package:calander/services/sports_onboarding_repository.dart';
 import 'package:calander/services/thesportsdb_client.dart';
 import 'package:calander/ui/sports/sports_onboarding_screen.dart';
@@ -22,6 +25,25 @@ class _FakeFollowedTeamsRepository implements FollowedTeamsRepository {
 
   @override
   Future<void> unfollowTeam(String teamId) async {}
+}
+
+class _FakeGamesCacheRepository implements SportsGamesCacheRepository {
+  @override
+  Future<List<CalendarEvent>> fetchCachedGames(String teamId) async => const [];
+}
+
+class _FakeEventRepository implements EventRepository {
+  @override
+  Stream<List<CalendarEvent>> watchEvents() => Stream.value(const []);
+
+  @override
+  Future<String> addEvent(CalendarEvent event) async => 'id';
+
+  @override
+  Future<void> updateEvent(CalendarEvent event) async {}
+
+  @override
+  Future<void> deleteEvent(String eventId) async {}
 }
 
 class _FakeOnboardingRepository implements SportsOnboardingRepository {
@@ -88,6 +110,8 @@ void main() {
           followedTeamsRepository: teams,
           onboardingRepository: onboarding,
           apiClient: _fakeClient(),
+          gamesCacheRepository: _FakeGamesCacheRepository(),
+          eventRepository: _FakeEventRepository(),
           onDone: onDone,
         ),
       ),

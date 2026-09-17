@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../models/followed_team.dart';
+import '../../services/event_repository.dart';
 import '../../services/followed_teams_repository.dart';
+import '../../services/sports_games_backfill.dart';
+import '../../services/sports_games_cache_repository.dart';
 import '../../services/thesportsdb_client.dart';
 import '../calendar/calendar_widgets.dart';
 import 'sports_style.dart';
@@ -12,10 +15,14 @@ class FollowTeamTab extends StatefulWidget {
     super.key,
     required this.repository,
     required this.apiClient,
+    required this.gamesCacheRepository,
+    required this.eventRepository,
   });
 
   final FollowedTeamsRepository repository;
   final TheSportsDbClient apiClient;
+  final SportsGamesCacheRepository gamesCacheRepository;
+  final EventRepository eventRepository;
 
   @override
   State<FollowTeamTab> createState() => _FollowTeamTabState();
@@ -31,6 +38,22 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
   void dispose() {
     _queryController.dispose();
     super.dispose();
+  }
+
+  Future<void> _followAndBackfill(FollowedTeam team) async {
+    await widget.repository.followTeam(team);
+    // Best-effort: the hourly poller will pick this team up regardless, so
+    // a cache read/ingest hiccup here shouldn't turn a successful follow
+    // into a user-visible error.
+    try {
+      await backfillCachedGamesForTeam(
+        team: team,
+        gamesCacheRepository: widget.gamesCacheRepository,
+        eventRepository: widget.eventRepository,
+      );
+    } catch (_) {
+      // Ignored -- see above.
+    }
   }
 
   Future<void> _search() async {
@@ -126,7 +149,7 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
                                   style: _compactButtonStyle(context),
                                   onPressed: () => runCalendarAction(
                                     context,
-                                    () => widget.repository.followTeam(team),
+                                    () => _followAndBackfill(team),
                                   ),
                                   child: const Text('Follow'),
                                 ),

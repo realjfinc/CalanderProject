@@ -1,5 +1,5 @@
 from canonical_event import CanonicalEvent
-from poll_sports_events import poll_upcoming_games
+from poll_sports_events import cache_all_team_games, poll_upcoming_games
 
 
 class FakeEventRepository:
@@ -139,3 +139,80 @@ def test_skips_malformed_games_from_the_api_rather_than_crashing_the_whole_poll(
     assert result.events_ingested == 1
     assert len(repo.events) == 1
     assert repo.events[0].source_id == "g1"
+
+
+class FakeSportsCacheRepository:
+    def __init__(self):
+        self.games = []
+
+    def upsert_game(self, game) -> None:
+        self.games.append(game)
+
+
+def test_cache_all_team_games_caches_every_catalog_team_regardless_of_whether_anyone_follows_it():
+    repos: dict[str, FakeSportsCacheRepository] = {}
+    requested_team_ids: list[str] = []
+
+    def fetch(team_id: str):
+        requested_team_ids.append(team_id)
+        return {
+            "t1": [_raw_game("g1")],
+            "t2": [_raw_game("g2"), _raw_game("g3")],
+        }.get(team_id, [])
+
+    def make_repo(team_id: str):
+        repo = FakeSportsCacheRepository()
+        repos[team_id] = repo
+        return repo
+
+    result = cache_all_team_games(
+        list_all_team_ids=lambda: ["t1", "t2", "t3"],
+        fetch_upcoming_events_raw_fn=fetch,
+        make_cache_repository=make_repo,
+    )
+
+    assert sorted(requested_team_ids) == ["t1", "t2", "t3"]
+    assert result.teams_cached == 3
+    assert result.games_cached == 3
+    assert len(repos["t1"].games) == 1
+    assert len(repos["t2"].games) == 2
+    assert len(repos["t3"].games) == 0
+
+
+def test_cache_all_team_games_skips_a_team_whose_fetch_fails_rather_than_aborting_the_whole_run():
+    def fetch(team_id: str):
+        if team_id == "broken-team":
+            raise RuntimeError("TheSportsDB is having a bad day")
+        return [_raw_game("g1")]
+
+    repos: dict[str, FakeSportsCacheRepository] = {}
+
+    def make_repo(team_id: str):
+        repo = FakeSportsCacheRepository()
+        repos[team_id] = repo
+        return repo
+
+    result = cache_all_team_games(
+        list_all_team_ids=lambda: ["broken-team", "t1"],
+        fetch_upcoming_events_raw_fn=fetch,
+        make_cache_repository=make_repo,
+    )
+
+    assert result.teams_cached == 2
+    assert result.games_cached == 1
+    assert "broken-team" not in repos
+    assert len(repos["t1"].games) == 1
+
+
+def test_cache_all_team_games_skips_malformed_games_from_the_api():
+    repo = FakeSportsCacheRepository()
+
+    result = cache_all_team_games(
+        list_all_team_ids=lambda: ["t1"],
+        fetch_upcoming_events_raw_fn=lambda team_id: [_raw_game("g1"), {"strHomeTeam": "No id"}],
+        make_cache_repository=lambda team_id: repo,
+    )
+
+    assert result.games_cached == 1
+    assert len(repo.games) == 1
+    assert repo.games[0].source_id == "g1"

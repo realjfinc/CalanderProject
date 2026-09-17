@@ -12,6 +12,7 @@ account or credential setup of its own to run.
 
 from __future__ import annotations
 
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
@@ -21,10 +22,91 @@ from canonical_event import CanonicalEventData, new_source_event
 
 DEFAULT_API_KEY = "3"
 _REQUEST_TIMEOUT_SECONDS = 15
+_RATE_LIMIT_MAX_ATTEMPTS = 3
+_RATE_LIMIT_BACKOFF_SECONDS = 1.5
 
 
 class SportsApiError(Exception):
     pass
+
+
+def _get(http, url: str, params: Optional[dict] = None):
+    """GET with a couple of retries specifically on HTTP 429 -- observed in
+    practice to be a transient, short-lived throttle on this free key
+    rather than a hard block, so a brief backoff before giving up (which
+    `cache_all_team_games`/`list_all_team_ids` would otherwise treat as
+    "skip this team/league until next run") recovers most of them.
+    """
+    response = None
+    for attempt in range(_RATE_LIMIT_MAX_ATTEMPTS):
+        response = http.get(url, params=params, timeout=_REQUEST_TIMEOUT_SECONDS)
+        if response.status_code != 429:
+            return response
+        if attempt < _RATE_LIMIT_MAX_ATTEMPTS - 1:
+            time.sleep(_RATE_LIMIT_BACKOFF_SECONDS * (attempt + 1))
+    return response
+
+
+# Sports (besides Soccer) this free key actually returns real league data
+# for via search_all_leagues.php -- confirmed by hand against the live API.
+# That endpoint hard-caps at 5 leagues per sport regardless of how many
+# really exist, so this is "everything the free key will show us", not a
+# claim of full coverage (there's no NBA/NFL/NHL/MLB data behind this key
+# at all -- that requires TheSportsDB's paid tier).
+OTHER_CATALOG_SPORTS = [
+    "Basketball",
+    "Ice Hockey",
+    "Baseball",
+    "American Football",
+    "Rugby",
+    "Cricket",
+    "Tennis",
+    "Motorsport",
+    "Volleyball",
+]
+
+
+def fetch_all_leagues(
+    api_key: str = DEFAULT_API_KEY, session: Optional[requests.Session] = None
+) -> list[dict[str, Any]]:
+    """Soccer's full, uncapped league list (`all_leagues.php`) -- the one
+    endpoint this free key doesn't cap to a handful of results.
+    """
+    http = session or requests
+    url = f"https://www.thesportsdb.com/api/v1/json/{api_key}/all_leagues.php"
+    response = _get(http, url)
+    if response.status_code != 200:
+        raise SportsApiError(f"All-leagues request failed with status {response.status_code}")
+    body = response.json() or {}
+    return [league for league in (body.get("leagues") or []) if league.get("strSport") == "Soccer"]
+
+
+def fetch_leagues_for_sport(
+    sport: str, api_key: str = DEFAULT_API_KEY, session: Optional[requests.Session] = None
+) -> list[dict[str, Any]]:
+    """Up to 5 leagues for a non-Soccer sport (`search_all_leagues.php`) --
+    this free key's hard cap on that endpoint, not a real total.
+    """
+    http = session or requests
+    url = f"https://www.thesportsdb.com/api/v1/json/{api_key}/search_all_leagues.php"
+    response = _get(http, url, params={"s": sport})
+    if response.status_code != 200:
+        raise SportsApiError(f"Search-leagues request failed with status {response.status_code}")
+    body = response.json() or {}
+    return body.get("countries") or []
+
+
+def fetch_team_ids_for_league(
+    league_id: str, api_key: str = DEFAULT_API_KEY, session: Optional[requests.Session] = None
+) -> list[str]:
+    """Every team's id in one league (`lookup_all_teams.php`)."""
+    http = session or requests
+    url = f"https://www.thesportsdb.com/api/v1/json/{api_key}/lookup_all_teams.php"
+    response = _get(http, url, params={"id": league_id})
+    if response.status_code != 200:
+        raise SportsApiError(f"Lookup-teams request failed with status {response.status_code}")
+    body = response.json() or {}
+    return [team["idTeam"] for team in (body.get("teams") or []) if isinstance(team.get("idTeam"), str)]
 
 
 def fetch_upcoming_events_raw(
@@ -36,7 +118,7 @@ def fetch_upcoming_events_raw(
     """
     http = session or requests
     url = f"https://www.thesportsdb.com/api/v1/json/{api_key}/eventsnext.php"
-    response = http.get(url, params={"id": team_id}, timeout=_REQUEST_TIMEOUT_SECONDS)
+    response = _get(http, url, params={"id": team_id})
     if response.status_code != 200:
         raise SportsApiError(f"Upcoming events request failed with status {response.status_code}")
     body = response.json() or {}
