@@ -30,6 +30,9 @@ class _FakeFollowedTeamsRepository implements FollowedTeamsRepository {
 class _FakeGamesCacheRepository implements SportsGamesCacheRepository {
   @override
   Future<List<CalendarEvent>> fetchCachedGames(String teamId) async => const [];
+
+  @override
+  Future<void> cacheGames(String teamId, List<CalendarEvent> games) async {}
 }
 
 class _FakeEventRepository implements EventRepository {

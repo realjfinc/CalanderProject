@@ -142,7 +142,7 @@ test('concurrent clients cannot both consume the final slot', async () => {
   assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
   assert.equal((await getDoc(doc(client(), 'clientWriteLimits/alice'))).data().count, 100);
 });
-test('the global sportsTeamGames cache is readable by any signed-in user but never client-writable', async () => {
+test('the global sportsTeamGames cache is readable by any signed-in user', async () => {
   const gamePath = 'sportsTeamGames/133604/games/e-1';
   await env.withSecurityRulesDisabled(async context => {
     await setDoc(doc(context.firestore(), gamePath), {
@@ -153,6 +153,40 @@ test('the global sportsTeamGames cache is readable by any signed-in user but nev
   });
   await assertSucceeds(getDoc(doc(client(), gamePath)));
   await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), gamePath)));
-  await assertFails(setDoc(doc(client(), gamePath), { title: 'Tampered' }, { merge: true }));
-  await assertFails(setDoc(doc(client(), 'sportsTeamGames/133604/games/e-2'), { title: 'Forged' }));
+});
+test('sportsTeamGames is writable by a signed-in client only with quota and a valid shape -- the live top-up path', async () => {
+  const db = client();
+  const gameId = 'e-1';
+  const gamePath = `sportsTeamGames/133604/games/${gameId}`;
+  const game = doc(db, gamePath);
+  const quota = doc(db, 'clientWriteLimits/alice');
+  const basePayload = {
+    title: 'Arsenal vs Chelsea', location: 'Emirates Stadium',
+    start: Timestamp.fromMillis(2000000000000), end: Timestamp.fromMillis(2000003600000),
+    sourceId: gameId, league: 'English Premier League',
+  };
+  async function attempt(payload) {
+    const batch = writeBatch(db);
+    batch.set(game, payload);
+    batch.set(quota, { count: 1, windowStart: serverTimestamp(), updatedAt: serverTimestamp(), paths: [gamePath] });
+    return batch.commit();
+  }
+
+  // No matching quota update in the same batch -- denied, same as every
+  // other client-writable collection.
+  await assertFails(setDoc(game, basePayload));
+  // sourceId must match the document id -- can't cache a game under a
+  // different team/game than its content claims.
+  await assertFails(attempt({ ...basePayload, sourceId: 'not-e-1' }));
+  // Missing a required field, or an extra one outside the allowed shape.
+  const { title: _omittedTitle, ...withoutTitle } = basePayload;
+  await assertFails(attempt(withoutTitle));
+  await assertFails(attempt({ ...basePayload, tag: 'work' }));
+  // end must be after start.
+  await assertFails(attempt({ ...basePayload, end: Timestamp.fromMillis(1000000000000) }));
+
+  await assertSucceeds(attempt(basePayload));
+  assert.equal((await getDoc(game)).data().title, 'Arsenal vs Chelsea');
+  // Counts against the same account-wide quota as everything else.
+  assert.equal((await getDoc(quota)).data().count, 1);
 });

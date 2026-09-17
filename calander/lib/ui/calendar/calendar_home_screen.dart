@@ -16,6 +16,7 @@ import '../../services/firestore_tag_routing_repository.dart';
 import '../../services/firestore_followed_teams_repository.dart';
 import '../../services/followed_teams_repository.dart';
 import '../../services/firestore_sports_onboarding_repository.dart';
+import '../../services/sports_games_cache_repository.dart';
 import '../../services/sports_onboarding_repository.dart';
 import '../extraction/upload_event_screen.dart';
 import '../legal/privacy_policy_screen.dart';
@@ -38,12 +39,14 @@ class CalendarHomeScreen extends StatefulWidget {
     this.tags,
     this.followedTeams,
     this.sportsOnboarding,
+    this.gamesCacheRepository,
   });
   final AuthService auth;
   final CalendarEventRepository? events;
   final TagRepository? tags;
   final FollowedTeamsRepository? followedTeams;
   final SportsOnboardingRepository? sportsOnboarding;
+  final SportsGamesCacheRepository? gamesCacheRepository;
   @override
   State<CalendarHomeScreen> createState() => _CalendarHomeScreenState();
 }
@@ -67,6 +70,7 @@ class _CalendarHomeScreenState extends State<CalendarHomeScreen> {
           tags: _tags,
           followedTeams: widget.followedTeams,
           sportsOnboarding: widget.sportsOnboarding,
+          gamesCacheRepository: widget.gamesCacheRepository,
         ),
       ),
     ),
@@ -82,12 +86,14 @@ class _CalendarDashboard extends StatefulWidget {
     required this.tags,
     this.followedTeams,
     this.sportsOnboarding,
+    this.gamesCacheRepository,
   });
   final AuthService auth;
   final CalendarEventRepository events;
   final TagRepository tags;
   final FollowedTeamsRepository? followedTeams;
   final SportsOnboardingRepository? sportsOnboarding;
+  final SportsGamesCacheRepository? gamesCacheRepository;
   @override
   State<_CalendarDashboard> createState() => _CalendarDashboardState();
 }
@@ -107,6 +113,9 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
   late final SportsOnboardingRepository _sportsOnboarding =
       widget.sportsOnboarding ??
       FirestoreSportsOnboardingRepository(uid: widget.auth.account!.uid);
+  late final SportsGamesCacheRepository _gamesCacheRepository =
+      widget.gamesCacheRepository ??
+      FirestoreSportsGamesCacheRepository(uid: widget.auth.account!.uid);
 
   @override
   void initState() {
@@ -254,6 +263,7 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
             followedTeamsRepository: _followedTeams,
             eventRepository: widget.events,
             onboardingRepository: _sportsOnboarding,
+            gamesCacheRepository: _gamesCacheRepository,
             bottomNavigationBar: _navigation(),
           );
         }
