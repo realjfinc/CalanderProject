@@ -50,6 +50,7 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
         team: team,
         gamesCacheRepository: widget.gamesCacheRepository,
         eventRepository: widget.eventRepository,
+        apiClient: widget.apiClient,
       );
     } catch (_) {
       // Ignored -- see above.

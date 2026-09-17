@@ -201,7 +201,7 @@ void main() {
             body: FollowTeamTab(
               repository: FirestoreFollowedTeamsRepository(uid: 'test-user', firestore: db),
               apiClient: TheSportsDbClient(httpClient: client),
-              gamesCacheRepository: FirestoreSportsGamesCacheRepository(firestore: db),
+              gamesCacheRepository: FirestoreSportsGamesCacheRepository(uid: 'test-user', firestore: db),
               eventRepository: FirestoreEventRepository(uid: 'test-user', firestore: db),
             ),
           ),

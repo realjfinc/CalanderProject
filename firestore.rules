@@ -24,10 +24,18 @@ service cloud.firestore {
         );
     }
 
-    function limitedWrite(userId, collectionId, documentId) {
+    // Generalized over any document path (not just this user's own
+    // `users/{userId}/...` tree) so the same account-wide quota also
+    // covers the one deliberate exception to "only the poller writes
+    // sportsTeamGames" below: a live top-up when a client finds nothing
+    // cached yet for a team it just followed.
+    function limitedWritePath(userId, path) {
       return validWriteQuota(userId)
-        && ('users/' + userId + '/' + collectionId + '/' + documentId)
-          in getAfter(/databases/$(database)/documents/clientWriteLimits/$(userId)).data.paths;
+        && path in getAfter(/databases/$(database)/documents/clientWriteLimits/$(userId)).data.paths;
+    }
+
+    function limitedWrite(userId, collectionId, documentId) {
+      return limitedWritePath(userId, 'users/' + userId + '/' + collectionId + '/' + documentId);
     }
 
     match /clientWriteLimits/{userId} {
@@ -157,11 +165,29 @@ service cloud.firestore {
     // scripts/sports_poller/sports_cache_repository.py). Read-only for any
     // signed-in client, so following a new team can immediately copy that
     // team's already-cached games into the user's own events instead of
-    // waiting for the next hourly poll. Only the poller (via the Admin
-    // SDK, which bypasses these rules entirely) ever writes it.
+    // waiting for the next hourly poll. The poller writes via the Admin
+    // SDK, which bypasses these rules entirely; the one client write path
+    // below exists only for a team the poller hasn't reached yet -- a
+    // live top-up on follow, gated by the same account-wide write quota
+    // and a validated shape so it can't be used to pollute a collection
+    // every signed-in user reads.
     match /sportsTeamGames/{teamId}/games/{gameId} {
+      function validCachedGame() {
+        let game = request.resource.data;
+        return game.keys().hasAll(['title', 'start', 'end', 'sourceId'])
+          && game.keys().hasOnly(['title', 'location', 'start', 'end', 'sourceId', 'league'])
+          && game.title is string && game.title.size() > 0 && game.title.size() <= 200
+          && (game.location == null || (game.location is string && game.location.size() <= 300))
+          && game.start is timestamp && game.end is timestamp && game.end > game.start
+          && game.sourceId is string && game.sourceId == gameId
+          && (game.league == null || (game.league is string && game.league.size() <= 200));
+      }
+
       allow read: if request.auth != null;
-      allow write: if false;
+      allow create, update: if request.auth != null
+        && limitedWritePath(request.auth.uid, 'sportsTeamGames/' + teamId + '/games/' + gameId)
+        && validCachedGame();
+      allow delete: if false;
     }
 
     // Default deny for everything else.

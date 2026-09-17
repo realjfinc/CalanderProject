@@ -41,12 +41,18 @@ class FirestoreWriteLimiter {
     List<String> paths,
     void Function(Transaction) write,
   ) async {
+    // `users/$uid/...` covers every per-user collection; `sportsTeamGames/`
+    // is the one deliberate exception (see firestore.rules) -- a live
+    // top-up of the shared games cache for a team the poller hasn't
+    // reached yet, still counted against this same account's quota.
     if (paths.isEmpty ||
         paths.length > 20 ||
         paths.toSet().length != paths.length ||
-        paths.any((path) => !path.startsWith('users/$uid/'))) {
+        paths.any(
+          (path) => !path.startsWith('users/$uid/') && !path.startsWith('sportsTeamGames/'),
+        )) {
       throw ArgumentError(
-        'Expected 1–20 distinct documents belonging to this user.',
+        'Expected 1–20 distinct documents belonging to this user or in the shared sports games cache.',
       );
     }
     final quota = firestore.collection('clientWriteLimits').doc(uid);
