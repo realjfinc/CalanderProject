@@ -151,6 +151,19 @@ service cloud.firestore {
       }
     }
 
+    // Global, cross-user cache of every catalog team's upcoming games
+    // (Step 7's Python poller populates this for every team the free
+    // TheSportsDB key can see, not just teams someone follows -- see
+    // scripts/sports_poller/sports_cache_repository.py). Read-only for any
+    // signed-in client, so following a new team can immediately copy that
+    // team's already-cached games into the user's own events instead of
+    // waiting for the next hourly poll. Only the poller (via the Admin
+    // SDK, which bypasses these rules entirely) ever writes it.
+    match /sportsTeamGames/{teamId}/games/{gameId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
     // Default deny for everything else.
     match /{document=**} {
       allow read, write: if false;

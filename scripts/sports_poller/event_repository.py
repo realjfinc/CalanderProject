@@ -19,7 +19,7 @@ class EventRepository(Protocol):
     def update_event(self, event: CanonicalEvent) -> None: ...
 
 
-def _parse_iso(value: str) -> datetime:
+def parse_iso(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
@@ -34,8 +34,8 @@ def _to_firestore_data(event: CanonicalEventData) -> dict:
     return {
         "title": event.title,
         "location": event.location,
-        "start": _parse_iso(event.start),
-        "end": _parse_iso(event.end),
+        "start": parse_iso(event.start),
+        "end": parse_iso(event.end),
         "source": event.source,
         "sourceId": event.source_id,
         "status": event.status,

@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../models/followed_team.dart';
+import '../../services/event_repository.dart';
 import '../../services/followed_teams_repository.dart';
+import '../../services/sports_games_backfill.dart';
+import '../../services/sports_games_cache_repository.dart';
 import '../../services/sports_onboarding_repository.dart';
 import '../../services/thesportsdb_client.dart';
 import '../calendar/calendar_widgets.dart';
@@ -38,12 +41,16 @@ class SportsOnboardingScreen extends StatefulWidget {
     required this.followedTeamsRepository,
     required this.onboardingRepository,
     required this.apiClient,
+    required this.gamesCacheRepository,
+    required this.eventRepository,
     required this.onDone,
   });
 
   final FollowedTeamsRepository followedTeamsRepository;
   final SportsOnboardingRepository onboardingRepository;
   final TheSportsDbClient apiClient;
+  final SportsGamesCacheRepository gamesCacheRepository;
+  final EventRepository eventRepository;
   final VoidCallback onDone;
 
   @override
@@ -140,6 +147,17 @@ class _SportsOnboardingScreenState extends State<SportsOnboardingScreen>
     try {
       for (final team in _selected.values) {
         await widget.followedTeamsRepository.followTeam(team);
+        // Best-effort: the hourly poller will pick this team up regardless,
+        // so a cache read/ingest hiccup here shouldn't block onboarding.
+        try {
+          await backfillCachedGamesForTeam(
+            team: team,
+            gamesCacheRepository: widget.gamesCacheRepository,
+            eventRepository: widget.eventRepository,
+          );
+        } catch (_) {
+          // Ignored -- see above.
+        }
       }
       await widget.onboardingRepository.completeOnboarding();
       widget.onDone();

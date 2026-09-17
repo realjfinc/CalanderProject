@@ -11,7 +11,18 @@ import 'provider_adapter.dart';
 /// later events in the same pass see earlier ones' effects without an
 /// extra Firestore round-trip per event.
 Future<void> syncProvider({required ProviderAdapter adapter, required EventRepository repository}) async {
-  final incomingEvents = await adapter.fetchEvents();
+  await ingestProviderEvents(incomingEvents: await adapter.fetchEvents(), repository: repository);
+}
+
+/// The shared loop body [syncProvider] runs per incoming event, pulled out
+/// so a caller that already has a list of incoming events in hand (not
+/// behind a [ProviderAdapter]'s `fetchEvents()` -- see
+/// `sports_games_backfill.dart`, which reads them from a Firestore cache
+/// instead of a live API call) can reuse it without re-fetching.
+Future<void> ingestProviderEvents({
+  required List<CalendarEvent> incomingEvents,
+  required EventRepository repository,
+}) async {
   final currentEvents = List<CalendarEvent>.of(await repository.watchEvents().first);
 
   for (final incoming in incomingEvents) {

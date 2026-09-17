@@ -13,6 +13,7 @@ import 'package:calander/models/calendar_event.dart';
 import 'package:calander/models/followed_team.dart';
 import 'package:calander/services/event_repository.dart';
 import 'package:calander/services/followed_teams_repository.dart';
+import 'package:calander/services/sports_games_cache_repository.dart';
 import 'package:calander/services/sports_onboarding_repository.dart';
 import 'package:calander/services/thesportsdb_client.dart';
 import 'package:calander/theme.dart';
@@ -54,6 +55,11 @@ class _FakeEventRepository implements EventRepository {
 
   @override
   Future<void> deleteEvent(String eventId) async {}
+}
+
+class _FakeGamesCacheRepository implements SportsGamesCacheRepository {
+  @override
+  Future<List<CalendarEvent>> fetchCachedGames(String teamId) async => const [];
 }
 
 class _FakeOnboardingRepository implements SportsOnboardingRepository {
@@ -133,6 +139,8 @@ void main() {
             followedTeamsRepository: _FakeFollowedTeamsRepository(),
             onboardingRepository: _FakeOnboardingRepository(),
             apiClient: _fakeClient(),
+            gamesCacheRepository: _FakeGamesCacheRepository(),
+            eventRepository: _FakeEventRepository(),
             onDone: () {},
           ),
         ),

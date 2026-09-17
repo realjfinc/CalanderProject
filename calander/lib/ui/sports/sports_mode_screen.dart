@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/event_repository.dart';
 import '../../services/followed_teams_repository.dart';
+import '../../services/sports_games_cache_repository.dart';
 import '../../services/sports_onboarding_repository.dart';
 import '../../services/thesportsdb_client.dart';
 import 'dashboard_tab.dart';
@@ -20,6 +21,7 @@ class SportsModeScreen extends StatefulWidget {
     required this.eventRepository,
     required this.onboardingRepository,
     this.apiClient,
+    this.gamesCacheRepository,
     this.bottomNavigationBar,
   });
 
@@ -27,6 +29,7 @@ class SportsModeScreen extends StatefulWidget {
   final EventRepository eventRepository;
   final SportsOnboardingRepository onboardingRepository;
   final TheSportsDbClient? apiClient;
+  final SportsGamesCacheRepository? gamesCacheRepository;
   final Widget? bottomNavigationBar;
 
   @override
@@ -35,6 +38,8 @@ class SportsModeScreen extends StatefulWidget {
 
 class _SportsModeScreenState extends State<SportsModeScreen> {
   late final TheSportsDbClient _apiClient = widget.apiClient ?? TheSportsDbClient();
+  late final SportsGamesCacheRepository _gamesCacheRepository =
+      widget.gamesCacheRepository ?? FirestoreSportsGamesCacheRepository();
   late final Future<bool> _onboardedFuture = widget.onboardingRepository.hasCompletedOnboarding();
   bool _skipOnboardingGate = false;
 
@@ -53,6 +58,8 @@ class _SportsModeScreenState extends State<SportsModeScreen> {
           followedTeamsRepository: widget.followedTeamsRepository,
           onboardingRepository: widget.onboardingRepository,
           apiClient: _apiClient,
+          gamesCacheRepository: _gamesCacheRepository,
+          eventRepository: widget.eventRepository,
           onDone: () => setState(() => _skipOnboardingGate = true),
         );
       },
@@ -80,7 +87,12 @@ class _SportsModeScreenState extends State<SportsModeScreen> {
               followedTeamsRepository: widget.followedTeamsRepository,
               eventRepository: widget.eventRepository,
             ),
-            FollowTeamTab(repository: widget.followedTeamsRepository, apiClient: _apiClient),
+            FollowTeamTab(
+              repository: widget.followedTeamsRepository,
+              apiClient: _apiClient,
+              gamesCacheRepository: _gamesCacheRepository,
+              eventRepository: widget.eventRepository,
+            ),
           ],
         ),
       ),

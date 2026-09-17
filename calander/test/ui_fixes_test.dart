@@ -17,6 +17,7 @@ import 'package:calander/services/firestore_event_repository.dart';
 import 'package:calander/services/firestore_followed_teams_repository.dart';
 import 'package:calander/services/firestore_sports_onboarding_repository.dart';
 import 'package:calander/services/firestore_tag_repository.dart';
+import 'package:calander/services/sports_games_cache_repository.dart';
 import 'package:calander/services/thesportsdb_client.dart';
 import 'package:calander/theme.dart';
 import 'package:calander/ui/calendar/calendar_home_screen.dart';
@@ -200,6 +201,8 @@ void main() {
             body: FollowTeamTab(
               repository: FirestoreFollowedTeamsRepository(uid: 'test-user', firestore: db),
               apiClient: TheSportsDbClient(httpClient: client),
+              gamesCacheRepository: FirestoreSportsGamesCacheRepository(firestore: db),
+              eventRepository: FirestoreEventRepository(uid: 'test-user', firestore: db),
             ),
           ),
         ),

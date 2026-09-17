@@ -142,3 +142,17 @@ test('concurrent clients cannot both consume the final slot', async () => {
   assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
   assert.equal((await getDoc(doc(client(), 'clientWriteLimits/alice'))).data().count, 100);
 });
+test('the global sportsTeamGames cache is readable by any signed-in user but never client-writable', async () => {
+  const gamePath = 'sportsTeamGames/133604/games/e-1';
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), gamePath), {
+      title: 'Arsenal vs Chelsea', location: 'Emirates Stadium',
+      start: Timestamp.fromMillis(2000000000000), end: Timestamp.fromMillis(2000003600000),
+      sourceId: 'e-1', league: 'English Premier League',
+    });
+  });
+  await assertSucceeds(getDoc(doc(client(), gamePath)));
+  await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), gamePath)));
+  await assertFails(setDoc(doc(client(), gamePath), { title: 'Tampered' }, { merge: true }));
+  await assertFails(setDoc(doc(client(), 'sportsTeamGames/133604/games/e-2'), { title: 'Forged' }));
+});

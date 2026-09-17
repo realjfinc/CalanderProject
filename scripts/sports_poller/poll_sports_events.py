@@ -33,7 +33,16 @@ from firebase_admin import credentials, firestore
 from canonical_event import CanonicalEvent
 from event_repository import EventRepository, FirestoreEventRepository
 from ingest_provider_event import ingest_provider_event
-from thesportsdb_client import fetch_upcoming_events_raw, map_sports_db_event
+from sports_cache_repository import FirestoreSportsCacheRepository, SportsCacheRepository
+from team_catalog import list_all_team_ids
+from thesportsdb_client import (
+    OTHER_CATALOG_SPORTS,
+    fetch_all_leagues,
+    fetch_leagues_for_sport,
+    fetch_team_ids_for_league,
+    fetch_upcoming_events_raw,
+    map_sports_db_event,
+)
 
 logger = logging.getLogger("poll_sports_events")
 
@@ -43,6 +52,12 @@ class PollResult:
     users_polled: int = 0
     teams_polled: int = 0
     events_ingested: int = 0
+
+
+@dataclass
+class CacheResult:
+    teams_cached: int = 0
+    games_cached: int = 0
 
 
 def poll_upcoming_games(
@@ -97,6 +112,42 @@ def poll_upcoming_games(
     return result
 
 
+def cache_all_team_games(
+    *,
+    list_all_team_ids: Callable[[], list[str]],
+    fetch_upcoming_events_raw_fn: Callable[[str], list[dict]],
+    make_cache_repository: Callable[[str], SportsCacheRepository],
+) -> CacheResult:
+    """Populates the global games cache (`sportsTeamGames/{teamId}/games`,
+    see `sports_cache_repository.py`) for every team in the catalog -- not
+    just teams someone follows -- so a newly followed team's games are
+    already in Firestore the moment someone follows it, instead of only
+    appearing after that team's first hourly poll.
+    """
+    result = CacheResult()
+
+    for team_id in list_all_team_ids():
+        result.teams_cached += 1
+        try:
+            raw_games = fetch_upcoming_events_raw_fn(team_id)
+        except Exception:
+            # Same reasoning as poll_upcoming_games: one team's request
+            # failing shouldn't cost every other team's cache refresh, and
+            # the next hourly run retries it anyway.
+            logger.exception("Failed to fetch upcoming games for team %s while caching; skipping it", team_id)
+            continue
+
+        repository = make_cache_repository(team_id)
+        for raw_game in raw_games:
+            mapped = map_sports_db_event(raw_game)
+            if mapped is None:
+                continue
+            repository.upsert_game(mapped)
+            result.games_cached += 1
+
+    return result
+
+
 def _load_credentials(path: Optional[str]) -> credentials.Base:
     if path:
         return credentials.Certificate(path)
@@ -111,12 +162,12 @@ def _load_credentials(path: Optional[str]) -> credentials.Base:
     )
 
 
-def run(credentials_path: Optional[str] = None) -> PollResult:
+def run(credentials_path: Optional[str] = None) -> tuple[PollResult, CacheResult]:
     app = firebase_admin.initialize_app(_load_credentials(credentials_path))
     db = firestore.client(app)
     http_session = requests.Session()
 
-    result = poll_upcoming_games(
+    poll_result = poll_upcoming_games(
         # Not `db.collection("users").stream()`: the app never writes a
         # document directly at `users/{uid}` -- only to subcollections
         # under it (events, tags, followedTeams, ...). Firestore only
@@ -141,11 +192,31 @@ def run(credentials_path: Optional[str] = None) -> PollResult:
 
     logger.info(
         "poll_sports_events complete: users_polled=%d teams_polled=%d events_ingested=%d",
-        result.users_polled,
-        result.teams_polled,
-        result.events_ingested,
+        poll_result.users_polled,
+        poll_result.teams_polled,
+        poll_result.events_ingested,
     )
-    return result
+
+    cache_result = cache_all_team_games(
+        list_all_team_ids=lambda: list_all_team_ids(
+            fetch_all_leagues=lambda: fetch_all_leagues(session=http_session),
+            fetch_leagues_for_sport=lambda sport: fetch_leagues_for_sport(sport, session=http_session),
+            fetch_team_ids_for_league=lambda league_id: fetch_team_ids_for_league(league_id, session=http_session),
+            other_sports=OTHER_CATALOG_SPORTS,
+        ),
+        fetch_upcoming_events_raw_fn=lambda team_id: fetch_upcoming_events_raw(
+            team_id, session=http_session
+        ),
+        make_cache_repository=lambda team_id: FirestoreSportsCacheRepository(db, team_id),
+    )
+
+    logger.info(
+        "cache_all_team_games complete: teams_cached=%d games_cached=%d",
+        cache_result.teams_cached,
+        cache_result.games_cached,
+    )
+
+    return poll_result, cache_result
 
 
 def main() -> int:
