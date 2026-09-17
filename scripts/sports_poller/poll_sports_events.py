@@ -22,6 +22,7 @@ import argparse
 import json
 import logging
 import os
+import random
 import sys
 from dataclasses import dataclass
 from typing import Callable, Optional
@@ -117,16 +118,27 @@ def cache_all_team_games(
     list_all_team_ids: Callable[[], list[str]],
     fetch_upcoming_events_raw_fn: Callable[[str], list[dict]],
     make_cache_repository: Callable[[str], SportsCacheRepository],
+    shuffle: Callable[[list], None] = random.shuffle,
 ) -> CacheResult:
     """Populates the global games cache (`sportsTeamGames/{teamId}/games`,
     see `sports_cache_repository.py`) for every team in the catalog -- not
     just teams someone follows -- so a newly followed team's games are
     already in Firestore the moment someone follows it, instead of only
     appearing after that team's first hourly poll.
+
+    Confirmed against the real API: this free key's shared rate limit
+    kicks in before every team in a full catalog gets its games fetched
+    in one run. `list_all_team_ids()` always returns the catalog sorted,
+    so processing it in that same order every run would mean the same
+    early teams always get cached and the same later ones never do --
+    shuffled here (an injectable no-op in tests) so a different subset
+    gets through each run instead.
     """
     result = CacheResult()
 
-    for team_id in list_all_team_ids():
+    team_ids = list(list_all_team_ids())
+    shuffle(team_ids)
+    for team_id in team_ids:
         result.teams_cached += 1
         try:
             raw_games = fetch_upcoming_events_raw_fn(team_id)
