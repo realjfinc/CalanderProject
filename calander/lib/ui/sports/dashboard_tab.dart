@@ -4,6 +4,7 @@ import '../../models/calendar_event.dart';
 import '../../models/followed_team.dart';
 import '../../services/event_repository.dart';
 import '../../services/followed_teams_repository.dart';
+import '../../services/sports_games_cleanup.dart';
 import '../calendar/calendar_widgets.dart';
 import 'sports_style.dart';
 
@@ -88,7 +89,10 @@ class DashboardTab extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await runCalendarAction(context, () => followedTeamsRepository.unfollowTeam(team.id));
+    await runCalendarAction(context, () async {
+      await removeTeamGamesFromCalendar(team: team, eventRepository: eventRepository);
+      await followedTeamsRepository.unfollowTeam(team.id);
+    });
   }
 }
 

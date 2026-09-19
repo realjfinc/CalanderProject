@@ -5,6 +5,7 @@ import '../../services/event_repository.dart';
 import '../../services/followed_teams_repository.dart';
 import '../../services/sports_games_backfill.dart';
 import '../../services/sports_games_cache_repository.dart';
+import '../../services/sports_games_cleanup.dart';
 import '../../services/thesportsdb_client.dart';
 import '../calendar/calendar_widgets.dart';
 import 'sports_style.dart';
@@ -146,10 +147,13 @@ class _FollowTeamTabState extends State<FollowTeamTab> {
                           child: followedIds.contains(team.id)
                               ? OutlinedButton(
                                   style: _compactButtonStyle(context),
-                                  onPressed: () => runCalendarAction(
-                                    context,
-                                    () => widget.repository.unfollowTeam(team.id),
-                                  ),
+                                  onPressed: () => runCalendarAction(context, () async {
+                                    await removeTeamGamesFromCalendar(
+                                      team: team,
+                                      eventRepository: widget.eventRepository,
+                                    );
+                                    await widget.repository.unfollowTeam(team.id);
+                                  }),
                                   child: const Text('Unfollow'),
                                 )
                               : ElevatedButton(

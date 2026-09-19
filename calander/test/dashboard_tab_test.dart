@@ -27,6 +27,7 @@ class _FakeFollowedTeamsRepository implements FollowedTeamsRepository {
 class _FakeEventRepository implements EventRepository {
   _FakeEventRepository(this._events);
   final List<CalendarEvent> _events;
+  final List<String> deletedIds = [];
 
   @override
   Stream<List<CalendarEvent>> watchEvents() => Stream.value(_events);
@@ -38,7 +39,10 @@ class _FakeEventRepository implements EventRepository {
   Future<void> updateEvent(CalendarEvent event) async {}
 
   @override
-  Future<void> deleteEvent(String eventId) async {}
+  Future<void> deleteEvent(String eventId) async {
+    deletedIds.add(eventId);
+    _events.removeWhere((e) => e.id == eventId);
+  }
 }
 
 CalendarEvent _game({
@@ -172,6 +176,34 @@ void main() {
     await tester.tap(find.text('Unfollow'));
     await tester.pumpAndSettle();
 
+    expect(repository.unfollowedIds, ['t1']);
+  });
+
+  testWidgets('unfollowing a team also deletes its synced games, but not other teams\' games', (tester) async {
+    final team = const FollowedTeam(id: 't1', name: 'Arsenal', league: 'EPL');
+    final repository = _FakeFollowedTeamsRepository([team]);
+    final now = DateTime.now().toUtc();
+    final events = _FakeEventRepository([
+      _game(id: 'e1', title: 'Arsenal vs Chelsea', start: now.add(const Duration(days: 1))),
+      _game(id: 'e2', title: 'Liverpool vs Arsenal', start: now.add(const Duration(days: 2))),
+      _game(id: 'e3', title: 'Chelsea vs Liverpool', start: now.add(const Duration(days: 3))),
+    ]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DashboardTab(followedTeamsRepository: repository, eventRepository: events),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unfollow'));
+    await tester.pumpAndSettle();
+
+    expect(events.deletedIds, unorderedEquals(['e1', 'e2']));
     expect(repository.unfollowedIds, ['t1']);
   });
 
