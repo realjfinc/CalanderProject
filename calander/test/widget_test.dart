@@ -7,6 +7,7 @@ import 'package:calander/auth/auth_service.dart';
 import 'package:calander/models/calendar_event.dart';
 import 'package:calander/services/firestore_event_repository.dart';
 import 'package:calander/services/firestore_tag_repository.dart';
+import 'package:calander/services/firestore_tag_routing_repository.dart';
 import 'package:calander/ui/calendar/calendar_home_screen.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -100,6 +101,7 @@ Future<void> mount(
       themeMode: mode,
       events: FirestoreEventRepository(uid: 'test-user', firestore: firestore),
       tags: FirestoreTagRepository(uid: 'test-user', firestore: firestore),
+      tagRouting: FirestoreTagRoutingRepository(uid: 'test-user', firestore: firestore),
     ),
   );
   await tester.pumpAndSettle();
@@ -211,16 +213,75 @@ void main() {
       await mount(tester, auth);
       expect(find.byType(CalendarHomeScreen), findsOneWidget);
       await tapText(tester, 'Settings');
-      // Step 1 added "Manage Tags"; Step 3 added "Add Event from Upload";
-      // Step 5 added "Tag Routing"; Step 7 added "Sports Mode".
-      expect(find.text('Manage Tags'), findsOneWidget);
-      expect(find.text('Add Event from Upload'), findsOneWidget);
-      expect(find.text('Tag Routing'), findsOneWidget);
+      // Tag management, tag routing, and upload/extraction now live under
+      // the Tags nav destination and the Calendar tab, not Settings.
+      expect(find.text('Manage Tags'), findsNothing);
+      expect(find.text('Add Event from Upload'), findsNothing);
+      expect(find.text('Tag Routing'), findsNothing);
+      expect(find.text('Export Calendar'), findsOneWidget);
+      expect(find.text('Provider Sync'), findsOneWidget);
+      expect(find.text('Appearance'), findsOneWidget);
       expect(find.text('Sports Mode'), findsNothing);
       expect(find.text('Welcome'), findsNothing);
       await tapText(tester, 'Log out');
       expect(find.text('Welcome To Calander'), findsOneWidget);
       expect(find.text('Log out'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'The calendar tab offers extraction (photo/PDF/link) right alongside New Event, not just from Settings',
+    (tester) async {
+      final auth = TestAuth()..setUser(verified: true);
+      await mount(tester, auth);
+
+      expect(find.text('Add from a photo, PDF, or link'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Tags nav destination hosts My Tags, Events, and Auto-Tag Rules as tabs',
+    (tester) async {
+      final auth = TestAuth()..setUser(verified: true);
+      await mount(tester, auth);
+
+      await tapText(tester, 'Tags');
+      expect(find.text('My Tags'), findsOneWidget);
+      expect(find.text('Events'), findsOneWidget);
+      expect(find.text('Auto-Tag Rules'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Appearance picker in Settings switches the app between light, dark, and system',
+    (tester) async {
+      final auth = TestAuth()..setUser(verified: true);
+      await mount(tester, auth, mode: ThemeMode.light);
+      await tapText(tester, 'Settings');
+
+      MaterialApp currentApp() => tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(currentApp().themeMode, ThemeMode.light);
+
+      await tapText(tester, 'Dark');
+      expect(currentApp().themeMode, ThemeMode.dark);
+
+      await tapText(tester, 'System');
+      expect(currentApp().themeMode, ThemeMode.system);
+    },
+  );
+
+  testWidgets(
+    'An unknown route shows the 404 screen instead of crashing',
+    (tester) async {
+      final auth = TestAuth()..setUser(verified: true);
+      await mount(tester, auth);
+
+      final context = tester.element(find.byType(CalendarHomeScreen));
+      Navigator.of(context, rootNavigator: true).pushNamed('/this-route-does-not-exist');
+      await tester.pumpAndSettle();
+
+      expect(find.text('404'), findsOneWidget);
+      expect(find.text('Back to Calander'), findsOneWidget);
     },
   );
 
@@ -238,7 +299,7 @@ void main() {
       await tapText(tester, 'Cancel');
       expect(find.text('Delete account?'), findsNothing);
       expect(auth.accountDeletions, 0);
-      expect(find.text('Manage Tags'), findsOneWidget);
+      expect(find.text('Export Calendar'), findsOneWidget);
 
       await tapText(tester, 'Delete Account');
       await tapText(tester, 'Delete');
@@ -354,14 +415,13 @@ void main() {
               themeMode: mode,
               events: events,
               tags: FirestoreTagRepository(uid: 'test-user', firestore: firestore),
+              tagRouting: FirestoreTagRoutingRepository(uid: 'test-user', firestore: firestore),
             ),
           ),
         );
         await tester.pumpAndSettle();
-        for (final screen in ['calendar', 'settings']) {
-          if (screen == 'settings') {
-            await tapText(tester, 'Settings');
-          }
+
+        Future<void> capture(String screen) async {
           final boundary =
               key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
           await tester.runAsync(() async {
@@ -373,6 +433,28 @@ void main() {
             image.dispose();
           });
         }
+
+        await capture('calendar');
+
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
+        await tester.pumpAndSettle();
+        await capture('calendar-scrolled');
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, 400));
+        await tester.pumpAndSettle();
+
+        await tapText(tester, 'Tags');
+        await capture('tags');
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+
+        await tapText(tester, 'Settings');
+        await capture('settings');
+
+        final context = tester.element(find.byType(CalendarHomeScreen));
+        Navigator.of(context, rootNavigator: true).pushNamed('/this-route-does-not-exist');
+        await tester.pumpAndSettle();
+        await capture('404');
       }
     },
   );

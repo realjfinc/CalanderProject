@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../models/event_tag.dart';
+import '../../services/event_repository.dart';
 import '../../services/tag_repository.dart';
+import '../../services/tag_routing_repository.dart';
 import '../calendar/calendar_widgets.dart';
+import 'event_tags_tab.dart';
+import 'tag_rules_tab.dart';
 
 /// Fixed palette offered when creating or editing a tag.
 const List<int> kTagColorPalette = [
@@ -18,11 +22,21 @@ const List<int> kTagColorPalette = [
   0xFFD81B60, // pink
 ];
 
-/// Lets the user view, add, rename, recolor, and delete their tags.
+/// Everything tag-related lives here: your tags themselves, assigning them
+/// to events, and the rules that auto-assign one to new untagged events.
+/// Previously split across "Manage Tags" and "Tag Routing" tiles buried in
+/// Settings -- now the one place the "Tags" nav destination goes.
 class TagManagementScreen extends StatefulWidget {
-  const TagManagementScreen({super.key, required this.repository});
+  const TagManagementScreen({
+    super.key,
+    required this.repository,
+    required this.eventRepository,
+    required this.routingRepository,
+  });
 
   final TagRepository repository;
+  final EventRepository eventRepository;
+  final TagRoutingRepository routingRepository;
 
   @override
   State<TagManagementScreen> createState() => _TagManagementScreenState();
@@ -88,74 +102,106 @@ class _TagManagementScreenState extends State<TagManagementScreen> {
     }
   }
 
+  Widget _myTagsTab() {
+    return FutureBuilder<void>(
+      future: _initFuture,
+      builder: (context, initSnapshot) {
+        if (initSnapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (initSnapshot.hasError) {
+          return Center(
+            child: Text('Failed to load tags: ${initSnapshot.error}'),
+          );
+        }
+        return StreamBuilder<List<EventTag>>(
+          stream: widget.repository.watchTags(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final tags = snapshot.data!;
+            if (tags.isEmpty) {
+              return const Center(
+                child: Text('No tags yet. Tap + to add one.'),
+              );
+            }
+            return ListView.builder(
+              itemCount: tags.length,
+              itemBuilder: (context, index) {
+                final tag = tags[index];
+                return ListTile(
+                  key: ValueKey(tag.id),
+                  leading: CircleAvatar(
+                    backgroundColor: Color(tag.colorValue),
+                    radius: 12,
+                  ),
+                  title: Text(tag.name),
+                  subtitle: tag.isDefault ? const Text('Default tag') : null,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        tooltip: 'Edit',
+                        onPressed: () => _openTagDialog(existing: tag),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: 'Delete',
+                        onPressed: () => _confirmDelete(tag),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Manage Tags')),
-      body: FutureBuilder<void>(
-        future: _initFuture,
-        builder: (context, initSnapshot) {
-          if (initSnapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (initSnapshot.hasError) {
-            return Center(
-              child: Text('Failed to load tags: ${initSnapshot.error}'),
-            );
-          }
-          return StreamBuilder<List<EventTag>>(
-            stream: widget.repository.watchTags(),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final tags = snapshot.data!;
-              if (tags.isEmpty) {
-                return const Center(
-                  child: Text('No tags yet. Tap + to add one.'),
-                );
-              }
-              return ListView.builder(
-                itemCount: tags.length,
-                itemBuilder: (context, index) {
-                  final tag = tags[index];
-                  return ListTile(
-                    key: ValueKey(tag.id),
-                    leading: CircleAvatar(
-                      backgroundColor: Color(tag.colorValue),
-                      radius: 12,
-                    ),
-                    title: Text(tag.name),
-                    subtitle: tag.isDefault ? const Text('Default tag') : null,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          tooltip: 'Edit',
-                          onPressed: () => _openTagDialog(existing: tag),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Delete',
-                          onPressed: () => _confirmDelete(tag),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
+    return DefaultTabController(
+      length: 3,
+      child: Builder(
+        builder: (context) {
+          final tabController = DefaultTabController.of(context);
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Tags'),
+              bottom: const TabBar(
+                tabs: [
+                  Tab(text: 'My Tags'),
+                  Tab(text: 'Events'),
+                  Tab(text: 'Auto-Tag Rules'),
+                ],
+              ),
+            ),
+            body: TabBarView(
+              children: [
+                _myTagsTab(),
+                EventTagsTab(eventRepository: widget.eventRepository, tagRepository: widget.repository),
+                TagRulesTab(routingRepository: widget.routingRepository, tagRepository: widget.repository),
+              ],
+            ),
+            floatingActionButton: AnimatedBuilder(
+              animation: tabController,
+              builder: (context, _) => tabController.index == 0
+                  ? FloatingActionButton(
+                      onPressed: () => _openTagDialog(),
+                      tooltip: 'Add tag',
+                      child: const Icon(Icons.add),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openTagDialog(),
-        tooltip: 'Add tag',
-        child: const Icon(Icons.add),
       ),
     );
   }

@@ -4,9 +4,20 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Uploaded source files for extracted events (Step 3's file uploads,
     // Step 4's screenshot captures). Only the owning, authenticated user
-    // may read or write their own uploads.
+    // may read or write their own uploads. The content-type/size check
+    // here is a cheap first line of defense against an obviously wrong
+    // upload (the wrong file type, or something oversized); it trusts the
+    // client-declared Content-Type, which a client bypassing the app
+    // entirely could spoof, so `onUploadFinalized` (functions/src/storage)
+    // re-checks the file's actual bytes after it lands and deletes
+    // anything that doesn't really match.
     match /users/{userId}/uploads/{fileName} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size <= 20 * 1024 * 1024
+        && request.resource.contentType.matches(
+          '^(image/png|image/jpeg|image/webp|image/heic|image/heif|application/pdf)$'
+        );
     }
 
     // Default deny for everything else.
