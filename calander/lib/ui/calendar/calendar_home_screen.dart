@@ -10,7 +10,10 @@ import '../../services/event_repository.dart';
 import '../../services/firestore_event_repository.dart';
 import '../../services/firestore_tag_repository.dart';
 import '../../services/tag_repository.dart';
+import '../../services/tag_routing_repository.dart';
+import '../../services/calendar_export_service.dart';
 import '../../services/cloud_function_extraction_service.dart';
+import '../../services/ics_export.dart';
 import '../../services/upload_storage.dart';
 import '../../services/firestore_tag_routing_repository.dart';
 import '../../services/firestore_followed_teams_repository.dart';
@@ -23,7 +26,6 @@ import '../legal/privacy_policy_screen.dart';
 import '../legal/terms_screen.dart';
 import '../sports/sports_mode_screen.dart';
 import '../tags/tag_management_screen.dart';
-import '../tags/tag_routing_screen.dart';
 import '../sync/provider_sync_screen.dart';
 import 'calendar_widgets.dart';
 import 'event_editor_screen.dart';
@@ -40,6 +42,9 @@ class CalendarHomeScreen extends StatefulWidget {
     this.followedTeams,
     this.sportsOnboarding,
     this.gamesCacheRepository,
+    this.tagRouting,
+    this.themeMode,
+    this.onThemeModeChanged,
   });
   final AuthService auth;
   final CalendarEventRepository? events;
@@ -47,6 +52,14 @@ class CalendarHomeScreen extends StatefulWidget {
   final FollowedTeamsRepository? followedTeams;
   final SportsOnboardingRepository? sportsOnboarding;
   final SportsGamesCacheRepository? gamesCacheRepository;
+  final TagRoutingRepository? tagRouting;
+
+  /// The device's current appearance choice, and how to change it -- both
+  /// null outside of [CalanderApp] (e.g. isolated screen tests), in which
+  /// case Settings falls back to a local, unpersisted notifier so it still
+  /// renders and functions on its own.
+  final ValueNotifier<ThemeMode>? themeMode;
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
   @override
   State<CalendarHomeScreen> createState() => _CalendarHomeScreenState();
 }
@@ -57,6 +70,8 @@ class _CalendarHomeScreenState extends State<CalendarHomeScreen> {
       widget.events ?? FirestoreEventRepository(uid: widget.auth.account!.uid);
   late final TagRepository _tags =
       widget.tags ?? FirestoreTagRepository(uid: widget.auth.account!.uid);
+  late final ValueNotifier<ThemeMode> _themeMode =
+      widget.themeMode ?? ValueNotifier(ThemeMode.system);
   @override
   Widget build(BuildContext context) => NavigatorPopHandler<Object?>(
     onPopWithResult: (result) =>
@@ -71,6 +86,9 @@ class _CalendarHomeScreenState extends State<CalendarHomeScreen> {
           followedTeams: widget.followedTeams,
           sportsOnboarding: widget.sportsOnboarding,
           gamesCacheRepository: widget.gamesCacheRepository,
+          tagRouting: widget.tagRouting,
+          themeMode: _themeMode,
+          onThemeModeChanged: widget.onThemeModeChanged ?? (mode) => _themeMode.value = mode,
         ),
       ),
     ),
@@ -87,13 +105,19 @@ class _CalendarDashboard extends StatefulWidget {
     this.followedTeams,
     this.sportsOnboarding,
     this.gamesCacheRepository,
+    this.tagRouting,
+    required this.themeMode,
+    required this.onThemeModeChanged,
   });
   final AuthService auth;
   final CalendarEventRepository events;
+  final ValueNotifier<ThemeMode> themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
   final TagRepository tags;
   final FollowedTeamsRepository? followedTeams;
   final SportsOnboardingRepository? sportsOnboarding;
   final SportsGamesCacheRepository? gamesCacheRepository;
+  final TagRoutingRepository? tagRouting;
   @override
   State<_CalendarDashboard> createState() => _CalendarDashboardState();
 }
@@ -116,6 +140,9 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
   late final SportsGamesCacheRepository _gamesCacheRepository =
       widget.gamesCacheRepository ??
       FirestoreSportsGamesCacheRepository(uid: widget.auth.account!.uid);
+  late final TagRoutingRepository _tagRouting =
+      widget.tagRouting ??
+      FirestoreTagRoutingRepository(uid: widget.auth.account!.uid);
 
   @override
   void initState() {
@@ -197,6 +224,16 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
     }
   }
 
+  void _openUpload() => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => UploadEventScreen(
+        extractionService: CloudFunctionExtractionService(),
+        eventRepository: widget.events,
+        uploadStorage: FirebaseUploadStorage(uid: widget.auth.account!.uid),
+      ),
+    ),
+  );
+
   void _detail(CalendarEvent event) => Navigator.of(context).push(
     MaterialPageRoute(
       builder: (_) => EventDetailScreen(
@@ -211,7 +248,11 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
     if (value == 3) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => TagManagementScreen(repository: widget.tags),
+          builder: (_) => TagManagementScreen(
+            repository: widget.tags,
+            eventRepository: widget.events,
+            routingRepository: _tagRouting,
+          ),
         ),
       );
     } else if (value == 4) {
@@ -221,6 +262,8 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
             auth: widget.auth,
             tags: widget.tags,
             events: widget.events,
+            themeMode: widget.themeMode,
+            onThemeModeChanged: widget.onThemeModeChanged,
           ),
         ),
       );
@@ -544,6 +587,12 @@ class _CalendarDashboardState extends State<_CalendarDashboard> {
                     ? 'Create my first event'
                     : 'New event',
               ),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: _openUpload,
+              icon: const Icon(Icons.auto_awesome, size: 18),
+              label: const Text('Add from a photo, PDF, or link'),
             ),
           ],
         );
@@ -918,17 +967,53 @@ class _CalendarSettings extends StatefulWidget {
     required this.auth,
     required this.tags,
     required this.events,
+    this.themeMode,
+    this.onThemeModeChanged,
   });
   final CalendarEventRepository events;
   final AuthService auth;
   final TagRepository tags;
+  final ValueNotifier<ThemeMode>? themeMode;
+  final ValueChanged<ThemeMode>? onThemeModeChanged;
   @override
   State<_CalendarSettings> createState() => _CalendarSettingsState();
 }
 
 class _CalendarSettingsState extends State<_CalendarSettings> {
   bool _busy = false;
+  bool _exporting = false;
   String? _error;
+  late final ValueNotifier<ThemeMode> _themeMode =
+      widget.themeMode ?? ValueNotifier(ThemeMode.system);
+  final CalendarExportService _exportService = FilePickerCalendarExportService();
+
+  Future<void> _exportCalendar() async {
+    setState(() => _exporting = true);
+    try {
+      final events = await widget.events.watchEvents().first;
+      final ics = buildIcsCalendar(events);
+      final saved = await _exportService.exportToFile(ics);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            saved
+                ? 'Exported ${events.length} ${events.length == 1 ? 'event' : 'events'}.'
+                : 'Export canceled.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not export your calendar: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
   Future<void> _logout() async {
     setState(() {
       _busy = true;
@@ -1006,59 +1091,16 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
       CalendarPanel(
         padding: 0,
         child: ListTile(
-          title: const Text('Manage Tags'),
-          subtitle: const Text('Make your calendar your own'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TagManagementScreen(repository: widget.tags),
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 12),
-      CalendarPanel(
-        padding: 0,
-        child: ListTile(
-          title: const Text('Add Event from Upload'),
-          subtitle: const Text(
-            'Photo, PDF, or a link — review before it saves',
-          ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => UploadEventScreen(
-                extractionService: CloudFunctionExtractionService(),
-                eventRepository: widget.events,
-                uploadStorage: FirebaseUploadStorage(
-                  uid: widget.auth.account!.uid,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(height: 12),
-      CalendarPanel(
-        padding: 0,
-        child: ListTile(
-          title: const Text('Tag Routing'),
-          subtitle: const Text('Tag untagged events, manually or by rule'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TagRoutingScreen(
-                eventRepository: widget.events,
-                tagRepository: widget.tags,
-                routingRepository: FirestoreTagRoutingRepository(
-                  uid: widget.auth.account!.uid,
-                ),
-              ),
-            ),
-          ),
+          leading: _exporting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.file_download_outlined),
+          title: const Text('Export Calendar'),
+          subtitle: const Text('Save an .ics file to use with other calendar apps'),
+          onTap: _exporting ? null : _exportCalendar,
         ),
       ),
       const SizedBox(height: 12),
@@ -1104,8 +1146,29 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
         ),
       ),
       const SizedBox(height: 12),
-      const CalendarPanel(
-        child: Text('Appearance follows your device’s light or dark setting.'),
+      CalendarPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Appearance', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            ValueListenableBuilder<ThemeMode>(
+              valueListenable: _themeMode,
+              builder: (context, mode, _) => SegmentedButton<ThemeMode>(
+                showSelectedIcon: false,
+                style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                segments: const [
+                  ButtonSegment(value: ThemeMode.system, label: Text('System')),
+                  ButtonSegment(value: ThemeMode.light, label: Text('Light')),
+                  ButtonSegment(value: ThemeMode.dark, label: Text('Dark')),
+                ],
+                selected: {mode},
+                onSelectionChanged: (selection) =>
+                    (widget.onThemeModeChanged ?? (m) => _themeMode.value = m)(selection.first),
+              ),
+            ),
+          ],
+        ),
       ),
       const SizedBox(height: 24),
       if (_error != null)

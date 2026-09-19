@@ -15,6 +15,9 @@ import { FirestoreEventRepository } from "./shared/eventRepository";
 import { fetchUpcomingEventsRaw } from "./sports/theSportsDbClient";
 import { pollUpcomingGames } from "./sports/pollUpcomingGames";
 import { limitExtraction } from "./shared/rateLimiter";
+import { onUploadFinalized } from "./storage/onUploadFinalized";
+
+export { onUploadFinalized };
 
 initializeApp();
 

@@ -3,9 +3,35 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:calander/models/calendar_event.dart';
 import 'package:calander/models/event_tag.dart';
+import 'package:calander/models/tag_rule.dart';
+import 'package:calander/services/event_repository.dart';
 import 'package:calander/services/tag_repository.dart';
+import 'package:calander/services/tag_routing_repository.dart';
 import 'package:calander/ui/tags/tag_management_screen.dart';
+
+/// Minimal fake -- these tests only exercise the "My Tags" tab, so the
+/// "Events" and "Auto-Tag Rules" tabs this screen now also hosts just need
+/// something that satisfies the interface, not real behavior.
+class _EmptyEventRepository implements EventRepository {
+  @override
+  Stream<List<CalendarEvent>> watchEvents() => Stream.value(const []);
+  @override
+  Future<String> addEvent(CalendarEvent event) async => 'id';
+  @override
+  Future<void> updateEvent(CalendarEvent event) async {}
+  @override
+  Future<void> deleteEvent(String eventId) async {}
+}
+
+/// Minimal fake -- see [_EmptyEventRepository].
+class _DefaultTagRoutingRepository implements TagRoutingRepository {
+  @override
+  Stream<TagRoutingSettings> watchSettings() => Stream.value(const TagRoutingSettings());
+  @override
+  Future<void> updateSettings(TagRoutingSettings settings) async {}
+}
 
 /// In-memory [TagRepository] for widget tests, independent of Firestore.
 class _InMemoryTagRepository implements TagRepository {
@@ -70,7 +96,7 @@ class _InMemoryTagRepository implements TagRepository {
 void main() {
   testWidgets('shows default tags after initialization', (tester) async {
     final repo = _InMemoryTagRepository();
-    await tester.pumpWidget(MaterialApp(home: TagManagementScreen(repository: repo)));
+    await tester.pumpWidget(MaterialApp(home: TagManagementScreen(repository: repo, eventRepository: _EmptyEventRepository(), routingRepository: _DefaultTagRoutingRepository())));
     await tester.pumpAndSettle();
 
     for (final name in kDefaultTagNames) {
@@ -80,7 +106,7 @@ void main() {
 
   testWidgets('adding a tag shows it in the list', (tester) async {
     final repo = _InMemoryTagRepository();
-    await tester.pumpWidget(MaterialApp(home: TagManagementScreen(repository: repo)));
+    await tester.pumpWidget(MaterialApp(home: TagManagementScreen(repository: repo, eventRepository: _EmptyEventRepository(), routingRepository: _DefaultTagRoutingRepository())));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.add));
@@ -94,7 +120,7 @@ void main() {
 
   testWidgets('editing a tag renames it', (tester) async {
     final repo = _InMemoryTagRepository();
-    await tester.pumpWidget(MaterialApp(home: TagManagementScreen(repository: repo)));
+    await tester.pumpWidget(MaterialApp(home: TagManagementScreen(repository: repo, eventRepository: _EmptyEventRepository(), routingRepository: _DefaultTagRoutingRepository())));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.edit).first);
@@ -108,7 +134,7 @@ void main() {
 
   testWidgets('deleting a tag requires confirmation and removes it', (tester) async {
     final repo = _InMemoryTagRepository();
-    await tester.pumpWidget(MaterialApp(home: TagManagementScreen(repository: repo)));
+    await tester.pumpWidget(MaterialApp(home: TagManagementScreen(repository: repo, eventRepository: _EmptyEventRepository(), routingRepository: _DefaultTagRoutingRepository())));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.delete_outline).first);
@@ -119,5 +145,38 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Work'), findsNothing);
+  });
+
+  testWidgets('hosts My Tags, Events, and Auto-Tag Rules as tabs, with the add-tag FAB only on My Tags', (
+    tester,
+  ) async {
+    final repo = _InMemoryTagRepository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TagManagementScreen(
+          repository: repo,
+          eventRepository: _EmptyEventRepository(),
+          routingRepository: _DefaultTagRoutingRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('My Tags'), findsOneWidget);
+    expect(find.text('Events'), findsOneWidget);
+    expect(find.text('Auto-Tag Rules'), findsOneWidget);
+    expect(find.byIcon(Icons.add), findsOneWidget);
+
+    await tester.tap(find.text('Events'));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.add), findsNothing);
+
+    await tester.tap(find.text('Auto-Tag Rules'));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.add), findsNothing);
+
+    await tester.tap(find.text('My Tags'));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.add), findsOneWidget);
   });
 }
