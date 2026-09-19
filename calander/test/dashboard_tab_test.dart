@@ -10,6 +10,7 @@ import 'package:calander/ui/sports/dashboard_tab.dart';
 class _FakeFollowedTeamsRepository implements FollowedTeamsRepository {
   _FakeFollowedTeamsRepository(this._teams);
   final List<FollowedTeam> _teams;
+  final List<String> unfollowedIds = [];
 
   @override
   Stream<List<FollowedTeam>> watchFollowedTeams() => Stream.value(_teams);
@@ -18,7 +19,9 @@ class _FakeFollowedTeamsRepository implements FollowedTeamsRepository {
   Future<void> followTeam(FollowedTeam team) async {}
 
   @override
-  Future<void> unfollowTeam(String teamId) async {}
+  Future<void> unfollowTeam(String teamId) async {
+    unfollowedIds.add(teamId);
+  }
 }
 
 class _FakeEventRepository implements EventRepository {
@@ -142,6 +145,58 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No upcoming games synced yet'), findsOneWidget);
+  });
+
+  testWidgets('unfollowing a team asks for confirmation, then removes it', (tester) async {
+    final team = const FollowedTeam(id: 't1', name: 'Arsenal', league: 'EPL');
+    final repository = _FakeFollowedTeamsRepository([team]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DashboardTab(
+            followedTeamsRepository: repository,
+            eventRepository: _FakeEventRepository(const []),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unfollow Arsenal?'), findsOneWidget);
+    expect(repository.unfollowedIds, isEmpty);
+
+    await tester.tap(find.text('Unfollow'));
+    await tester.pumpAndSettle();
+
+    expect(repository.unfollowedIds, ['t1']);
+  });
+
+  testWidgets('canceling the unfollow confirmation leaves the team followed', (tester) async {
+    final team = const FollowedTeam(id: 't1', name: 'Arsenal', league: 'EPL');
+    final repository = _FakeFollowedTeamsRepository([team]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DashboardTab(
+            followedTeamsRepository: repository,
+            eventRepository: _FakeEventRepository(const []),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(repository.unfollowedIds, isEmpty);
   });
 
   testWidgets('shows a prompt to follow a team when none are followed', (tester) async {

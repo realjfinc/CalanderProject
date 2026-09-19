@@ -4,6 +4,7 @@ import '../../models/calendar_event.dart';
 import '../../models/followed_team.dart';
 import '../../services/event_repository.dart';
 import '../../services/followed_teams_repository.dart';
+import '../calendar/calendar_widgets.dart';
 import 'sports_style.dart';
 
 /// Shows each followed team's next game.
@@ -60,7 +61,11 @@ class DashboardTab extends StatelessWidget {
                 return _StaggeredEntrance(
                   key: ValueKey(team.id),
                   index: index,
-                  child: _MatchCard(team: team, nextGame: nextGame),
+                  child: _MatchCard(
+                    team: team,
+                    nextGame: nextGame,
+                    onUnfollow: () => _confirmUnfollow(context, team),
+                  ),
                 );
               },
             );
@@ -68,6 +73,22 @@ class DashboardTab extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _confirmUnfollow(BuildContext context, FollowedTeam team) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Unfollow ${team.name}?'),
+        content: const Text('You can follow them again anytime.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Unfollow')),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await runCalendarAction(context, () => followedTeamsRepository.unfollowTeam(team.id));
   }
 }
 
@@ -97,10 +118,11 @@ class _StaggeredEntrance extends StatelessWidget {
 }
 
 class _MatchCard extends StatelessWidget {
-  const _MatchCard({required this.team, required this.nextGame});
+  const _MatchCard({required this.team, required this.nextGame, required this.onUnfollow});
 
   final FollowedTeam team;
   final CalendarEvent? nextGame;
+  final VoidCallback onUnfollow;
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +162,11 @@ class _MatchCard extends StatelessWidget {
                                   ),
                               ],
                             ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            tooltip: 'Unfollow ${team.name}',
+                            onPressed: onUnfollow,
                           ),
                         ],
                       ),
