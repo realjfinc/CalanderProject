@@ -44,6 +44,7 @@ class TagManagementScreen extends StatefulWidget {
 
 class _TagManagementScreenState extends State<TagManagementScreen> {
   late final Future<void> _initFuture;
+  final _rulesTabKey = GlobalKey<TagRulesTabState>();
 
   @override
   void initState() {
@@ -187,18 +188,28 @@ class _TagManagementScreenState extends State<TagManagementScreen> {
               children: [
                 _myTagsTab(),
                 EventTagsTab(eventRepository: widget.eventRepository, tagRepository: widget.repository),
-                TagRulesTab(routingRepository: widget.routingRepository, tagRepository: widget.repository),
+                TagRulesTab(
+                  key: _rulesTabKey,
+                  routingRepository: widget.routingRepository,
+                  tagRepository: widget.repository,
+                ),
               ],
             ),
             floatingActionButton: AnimatedBuilder(
               animation: tabController,
-              builder: (context, _) => tabController.index == 0
-                  ? FloatingActionButton(
-                      onPressed: () => _openTagDialog(),
-                      tooltip: 'Add tag',
-                      child: const Icon(Icons.add),
-                    )
-                  : const SizedBox.shrink(),
+              builder: (context, _) => switch (tabController.index) {
+                0 => FloatingActionButton(
+                    onPressed: () => _openTagDialog(),
+                    tooltip: 'Add tag',
+                    child: const Icon(Icons.add),
+                  ),
+                2 => FloatingActionButton(
+                    onPressed: () => _rulesTabKey.currentState?.addRule(),
+                    tooltip: 'Add rule',
+                    child: const Icon(Icons.add),
+                  ),
+                _ => const SizedBox.shrink(),
+              },
             ),
           );
         },

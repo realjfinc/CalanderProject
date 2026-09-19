@@ -10,7 +10,12 @@ import '../calendar/calendar_widgets.dart';
 /// Per spec, auto-tagging never runs while `autoTagEnabled` is false, and
 /// this screen is the only thing (besides direct per-event tagging in
 /// [EventTagsTab]) that ever writes here.
-class TagRulesTab extends StatelessWidget {
+///
+/// Adding a rule is triggered from [TagManagementScreen]'s own FAB (via
+/// [addRule] through a [GlobalKey]), not a FAB of this tab's own -- the
+/// host screen swaps one shared FAB's action per tab instead of each tab
+/// carrying its own.
+class TagRulesTab extends StatefulWidget {
   const TagRulesTab({
     super.key,
     required this.routingRepository,
@@ -19,6 +24,23 @@ class TagRulesTab extends StatelessWidget {
 
   final TagRoutingRepository routingRepository;
   final TagRepository tagRepository;
+
+  @override
+  State<TagRulesTab> createState() => TagRulesTabState();
+}
+
+class TagRulesTabState extends State<TagRulesTab> {
+  TagRoutingSettings? _settings;
+  List<EventTag> _tags = const [];
+
+  /// Called by [TagManagementScreen]'s FAB. A no-op until this tab's
+  /// streams have delivered at least one value -- the FAB only shows once
+  /// this tab is on screen and built, so in practice that's immediate.
+  Future<void> addRule() async {
+    final settings = _settings;
+    if (settings == null) return;
+    await _addOrEditRule(context, settings, _tags);
+  }
 
   Future<void> _addOrEditRule(
     BuildContext context,
@@ -44,7 +66,7 @@ class TagRulesTab extends StatelessWidget {
     if (!context.mounted) return;
     await runCalendarAction(
       context,
-      () => routingRepository.updateSettings(
+      () => widget.routingRepository.updateSettings(
         settings.copyWith(tagRules: updatedRules),
       ),
     );
@@ -58,7 +80,7 @@ class TagRulesTab extends StatelessWidget {
     final updatedRules = [...settings.tagRules]..removeAt(index);
     await runCalendarAction(
       context,
-      () => routingRepository.updateSettings(
+      () => widget.routingRepository.updateSettings(
         settings.copyWith(tagRules: updatedRules),
       ),
     );
@@ -67,7 +89,7 @@ class TagRulesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<EventTag>>(
-      stream: tagRepository.watchTags(),
+      stream: widget.tagRepository.watchTags(),
       builder: (context, tagSnapshot) {
         if (tagSnapshot.hasError) {
           return const Center(
@@ -75,10 +97,11 @@ class TagRulesTab extends StatelessWidget {
           );
         }
         final tags = tagSnapshot.data ?? const [];
+        _tags = tags;
         final tagsById = {for (final tag in tags) tag.id: tag};
 
         return StreamBuilder<TagRoutingSettings>(
-          stream: routingRepository.watchSettings(),
+          stream: widget.routingRepository.watchSettings(),
           builder: (context, settingsSnapshot) {
             if (settingsSnapshot.hasError) {
               return const Center(
@@ -91,6 +114,7 @@ class TagRulesTab extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             final settings = settingsSnapshot.data!;
+            _settings = settings;
             return Column(
               children: [
                 SwitchListTile(
@@ -101,7 +125,7 @@ class TagRulesTab extends StatelessWidget {
                   value: settings.autoTagEnabled,
                   onChanged: (value) => runCalendarAction(
                     context,
-                    () => routingRepository.updateSettings(
+                    () => widget.routingRepository.updateSettings(
                       settings.copyWith(autoTagEnabled: value),
                     ),
                   ),

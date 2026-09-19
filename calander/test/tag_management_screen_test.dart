@@ -147,9 +147,41 @@ void main() {
     expect(find.text('Work'), findsNothing);
   });
 
-  testWidgets('hosts My Tags, Events, and Auto-Tag Rules as tabs, with the add-tag FAB only on My Tags', (
-    tester,
-  ) async {
+  testWidgets(
+    'hosts My Tags, Events, and Auto-Tag Rules as tabs, with an add-something FAB on My Tags and Auto-Tag Rules but not Events',
+    (tester) async {
+      final repo = _InMemoryTagRepository();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: TagManagementScreen(
+            repository: repo,
+            eventRepository: _EmptyEventRepository(),
+            routingRepository: _DefaultTagRoutingRepository(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('My Tags'), findsOneWidget);
+      expect(find.text('Events'), findsOneWidget);
+      expect(find.text('Auto-Tag Rules'), findsOneWidget);
+      expect(find.byTooltip('Add tag'), findsOneWidget);
+
+      await tester.tap(find.text('Events'));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.add), findsNothing);
+
+      await tester.tap(find.text('Auto-Tag Rules'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Add rule'), findsOneWidget);
+
+      await tester.tap(find.text('My Tags'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Add tag'), findsOneWidget);
+    },
+  );
+
+  testWidgets('the Auto-Tag Rules FAB actually opens the add-rule dialog', (tester) async {
     final repo = _InMemoryTagRepository();
     await tester.pumpWidget(
       MaterialApp(
@@ -162,21 +194,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('My Tags'), findsOneWidget);
-    expect(find.text('Events'), findsOneWidget);
-    expect(find.text('Auto-Tag Rules'), findsOneWidget);
-    expect(find.byIcon(Icons.add), findsOneWidget);
-
-    await tester.tap(find.text('Events'));
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.add), findsNothing);
-
     await tester.tap(find.text('Auto-Tag Rules'));
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.add), findsNothing);
+    expect(find.text('No rules yet. Tap + to add one.'), findsOneWidget);
 
-    await tester.tap(find.text('My Tags'));
+    await tester.tap(find.byTooltip('Add rule'));
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.add), findsOneWidget);
+
+    expect(find.text('Add rule'), findsWidgets);
+    expect(find.text('Field'), findsOneWidget);
+    expect(find.text('Assign tag'), findsOneWidget);
   });
 }
