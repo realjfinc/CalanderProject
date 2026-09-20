@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — Calander</title>
+<meta name="description" content="Calander's Privacy Policy: what we collect, how we use AI, and your choices." />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="page">
+  <nav class="crumbs"><a href="index.html">Calander</a></nav>
+  <a class="brand" href="index.html">Calander</a>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated September 2026</p>
+
+  <p>This is also available inside the app itself: <strong>Settings → Privacy Policy</strong>
+  (and from the welcome screen, before you create an account). Both copies
+  describe the same policy; this page is the version most convenient to read
+  or link to outside the app.</p>
+
+  <h2>Overview</h2>
+  <p>Calander ("we", "our", "the app") helps you manage your calendar, extract
+  events from photos, PDFs, and links, sync with other calendar providers,
+  and follow sports teams' schedules. This policy explains what information
+  we collect, how we use it — including where we use AI — and the choices
+  you have.</p>
+
+  <h2>Information We Collect</h2>
+  <ul>
+    <li><strong>Account information</strong>: your name, email address, and a securely
+      hashed password, created when you sign up through Firebase
+      Authentication.</li>
+    <li><strong>Calendar data</strong>: the events you create or import — titles, locations,
+      start/end times, notes, tags, and attachments.</li>
+    <li><strong>Uploads and links you submit for event extraction</strong>: photos, PDF
+      files, and link URLs you choose to extract event details from.</li>
+    <li><strong>Connected calendar accounts</strong>: if you connect Google Calendar,
+      Outlook, or iCloud, we access and sync events from those accounts using
+      the permissions you grant.</li>
+    <li><strong>Followed sports teams</strong>: teams you choose to follow in Sports Mode,
+      and the game schedules synced for them.</li>
+    <li><strong>Device and notification data</strong>: a push-notification token so we can
+      send you event reminders, and your device's timezone so events display
+      correctly.</li>
+  </ul>
+
+  <h2>How We Use AI</h2>
+  <p>When you use "Add Event from Upload," the photo, PDF, or link content you
+  submit is sent to <strong>Anthropic's Claude API</strong> — a third-party AI service —
+  to extract a proposed event's title, location, start time, end time, and
+  notes.</p>
+  <ul>
+    <li>Only the specific file or link you submit is sent — never your other
+      calendar data, account details, or contacts.</li>
+    <li>Your device's timezone label is included only so the AI can correctly
+      interpret a time that has no explicit UTC offset.</li>
+    <li>The AI never saves anything to your calendar on its own. It returns a
+      proposed, editable draft that you must review and confirm before it's
+      added — you're always in control of what actually gets saved.</li>
+    <li>Per Anthropic's API terms, content submitted through this feature is
+      not used to train Anthropic's underlying models, and is retained only
+      briefly for abuse and safety monitoring — not for any other purpose.</li>
+    <li>If you keep the original photo or PDF as an attachment on the saved
+      event, it's stored securely in your account's private cloud storage.
+      Extraction itself doesn't otherwise retain your file.</li>
+  </ul>
+
+  <h2>FTC AI Disclosure</h2>
+  <p>In line with FTC guidance on disclosing the use of artificial intelligence:</p>
+  <ul>
+    <li>Calander uses a third-party AI model (<strong>Anthropic's Claude</strong>) to read a
+      photo, PDF, or link you submit and propose calendar event details. This is
+      an AI-assisted extraction feature, not a human reviewing your content.</li>
+    <li><strong>AI output can be wrong.</strong> The model can misread dates, times, locations,
+      or other details, especially from low-quality images, ambiguous text, or
+      unusual formats. Always check an extracted event before saving it.</li>
+    <li><strong>No event is ever saved automatically.</strong> Every AI-generated draft is
+      shown to you for review, and you must explicitly confirm — and may edit —
+      it before it's added to your calendar. AI never makes the final decision;
+      you do.</li>
+    <li>We do not use AI to profile you, score you, or make any automated
+      decision that has a legal or similarly significant effect on you.</li>
+  </ul>
+
+  <h2>Other Third-Party Services</h2>
+  <ul>
+    <li><strong>Firebase (Google)</strong>: powers authentication, calendar data storage,
+      file storage, push notifications, and the extraction and sports-sync
+      functions described above. Google processes this data on our behalf as
+      our infrastructure provider.</li>
+    <li><strong>TheSportsDB</strong>: when you follow a team, we send only that team's name
+      to TheSportsDB's public schedule API to fetch upcoming games — no
+      personal or account information is shared with them.</li>
+    <li><strong>Google Calendar, Microsoft Outlook, Apple iCloud</strong>: if you connect
+      one of these, we access your calendar through the permissions you
+      explicitly grant, solely to sync events into Calander. You can
+      disconnect at any time from Provider Sync in Settings.</li>
+  </ul>
+
+  <h2>Data Storage &amp; Security</h2>
+  <p>Your data is stored using Firebase's cloud infrastructure with encryption
+  in transit and at rest. Access to your calendar is restricted to your own
+  signed-in, verified account through Firestore security rules — no other
+  user can read or write your events.</p>
+
+  <h2>Data Retention &amp; Deletion</h2>
+  <p>We keep your account and calendar data for as long as your account stays
+  active. You can delete individual events, tags, or followed teams at any
+  time from within the app. You can also permanently delete your entire
+  account and all associated data — your calendar, tags, followed teams,
+  and uploaded attachments — yourself, in-app, from <strong>Settings → Delete
+  Account</strong>. This is immediate and can't be undone. If you'd rather we do
+  it for you, contact us using the details below.</p>
+
+  <h2>Your Choices</h2>
+  <ul>
+    <li>Review every AI-extracted event before it's saved — nothing is added
+      automatically.</li>
+    <li>Disconnect a connected calendar provider at any time.</li>
+    <li>Unfollow a sports team to stop syncing its games.</li>
+    <li>Turn off notifications from your device settings.</li>
+  </ul>
+
+  <h2>Privacy Nutrition Label</h2>
+  <p>A quick-reference summary of what we collect and why, similar to an app
+  store "privacy nutrition label." The sections above are the full policy;
+  this table is a shortcut, not a replacement.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data category</th>
+        <th>Collected?</th>
+        <th>Used for</th>
+        <th>Shared with a third party?</th>
+        <th>Linked to your identity?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Name, email, password</td>
+        <td>Yes</td>
+        <td>Account creation &amp; sign-in</td>
+        <td>Firebase (infrastructure only)</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Calendar events, notes, tags</td>
+        <td>Yes</td>
+        <td>Core app functionality</td>
+        <td>Firebase (storage only)</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Photos/PDFs/links you submit for extraction</td>
+        <td>Yes, only what you submit</td>
+        <td>AI event extraction</td>
+        <td>Anthropic (processed, not used for training)</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Connected calendar data (Google/Outlook/iCloud)</td>
+        <td>Only if you connect a provider</td>
+        <td>Sync events into Calander</td>
+        <td>The provider itself, via the permissions you grant</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Followed sports teams</td>
+        <td>Only if you use Sports Mode</td>
+        <td>Show game schedules</td>
+        <td>TheSportsDB (team name only, no account data)</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>Push notification token &amp; device timezone</td>
+        <td>Yes</td>
+        <td>Event reminders, correct local times</td>
+        <td>Firebase Cloud Messaging</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Precise/background location</td>
+        <td>No</td>
+        <td>—</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>Health, financial, or browsing-history data</td>
+        <td>No</td>
+        <td>—</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>Advertising or cross-app tracking identifiers</td>
+        <td>No</td>
+        <td>—</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>We do not sell your data, and we do not use your data for advertising.</p>
+
+  <h2>Children's Privacy</h2>
+  <p>Calander is not directed at children under 13, and we do not knowingly
+  collect information from them.</p>
+
+  <h2>Changes to This Policy</h2>
+  <p>We may update this policy as the app changes. We'll update the date at
+  the top when we do, in both this page and the in-app copy.</p>
+
+  <h2>Contact Us</h2>
+  <p>Questions about this policy or your data? Contact us at
+  <strong>privacy@calanderapp.com</strong>.</p>
+
+  <footer>
+    <p><a href="index.html">← Back to Calander</a> · <a href="terms.html">Terms and Conditions</a></p>
+  </footer>
+</div>
+</body>
+</html>
