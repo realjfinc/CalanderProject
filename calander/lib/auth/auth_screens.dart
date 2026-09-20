@@ -127,6 +127,7 @@ class _SignedOutFlowState extends State<SignedOutFlow> {
             : () => _go(AuthPage.welcome),
         children: [
           if (_page == AuthPage.welcome) ...[
+            AuthMessage(widget.auth.notice),
             const SizedBox(height: 20),
             const _WelcomePreview(),
             const SizedBox(height: 24),

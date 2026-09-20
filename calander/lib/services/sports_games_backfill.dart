@@ -44,5 +44,10 @@ Future<void> backfillCachedGamesForTeam({
     }
   }
 
-  await ingestProviderEvents(incomingEvents: games, repository: eventRepository);
+  await ingestProviderEvents(
+    incomingEvents: games
+        .map((game) => game.copyWith(sportsTeamIds: [team.id]))
+        .toList(),
+    repository: eventRepository,
+  );
 }

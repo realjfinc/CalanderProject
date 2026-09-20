@@ -4,6 +4,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+import '../services/account_deletion.dart';
+
 @immutable
 class AuthAccount {
   const AuthAccount({
@@ -17,6 +19,7 @@ class AuthAccount {
 }
 
 abstract class AuthService extends ChangeNotifier {
+  bool get deletingAccount => false;
   AuthAccount? get account;
   bool get loading;
   String? get notice;
@@ -27,19 +30,20 @@ abstract class AuthService extends ChangeNotifier {
   Future<void> refreshAccount();
   Future<void> logOut();
 
-  /// Permanently deletes the signed-in user's account and all their data
-  /// (see the `deleteAccount` Cloud Function), then signs them out. There's
-  /// no undo -- callers are expected to confirm with the user first.
-  Future<void> deleteAccount();
+  /// Deletes saved calendar data, then the Firebase login, and signs out.
+  /// Callers must confirm and collect the current password first.
+  Future<void> deleteAccount({required String password});
 }
 
 class FirebaseAuthService extends AuthService {
-  FirebaseAuthService({FirebaseAuth? firebaseAuth, FirebaseFunctions? functions})
-    : _auth = firebaseAuth ?? FirebaseAuth.instance,
-      _functions = functions ?? FirebaseFunctions.instance {
+  FirebaseAuthService({
+    FirebaseAuth? firebaseAuth,
+    AccountDeletionService? accountDeletion,
+  }) : _auth = firebaseAuth ?? FirebaseAuth.instance,
+       _accountDeletion = accountDeletion ?? AccountDeletionService() {
     _subscription = _auth.userChanges().listen(
       (_) {
-        if (!_creatingAccount) _publishAccount();
+        if (!_creatingAccount && !_deletingAccount) _publishAccount();
       },
       onError: (Object error) {
         if (_disposed) return;
@@ -50,11 +54,14 @@ class FirebaseAuthService extends AuthService {
     );
   }
   final FirebaseAuth _auth;
-  final FirebaseFunctions _functions;
+  final AccountDeletionService _accountDeletion;
   late final StreamSubscription<User?> _subscription;
   AuthAccount? _account;
   bool _loading = true;
   bool _creatingAccount = false;
+  bool _deletingAccount = false;
+  @override
+  bool get deletingAccount => _deletingAccount;
   bool _disposed = false;
   String? _notice;
   @override
@@ -165,11 +172,22 @@ class FirebaseAuthService extends AuthService {
   }
 
   @override
-  Future<void> deleteAccount() async {
-    await _functions.httpsCallable('deleteAccount').call<void>();
-    await _auth.signOut();
-    _notice = null;
-    _publishAccount();
+  Future<void> deleteAccount({required String password}) async {
+    if (_deletingAccount) return;
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(code: 'requires-recent-login');
+    }
+    _deletingAccount = true;
+    notifyListeners();
+    try {
+      await _accountDeletion.delete(user, password);
+      await _auth.signOut();
+      _notice = 'Your account has been deleted.';
+    } finally {
+      _deletingAccount = false;
+      _publishAccount();
+    }
   }
 
   @override
@@ -181,6 +199,21 @@ class FirebaseAuthService extends AuthService {
 }
 
 String authErrorMessage(Object error) {
+  if (error is AccountDeletionException) return error.message;
+  if (error is FirebaseFunctionsException) {
+    return switch (error.code) {
+      'not-found' || 'unimplemented' =>
+        'Account deletion is currently unavailable. Please contact support.',
+      'unauthenticated' => 'Please log in again to delete your account.',
+      'permission-denied' =>
+        'Account deletion could not be authorized. Please contact support.',
+      'unavailable' => 'Couldn’t reach the account service. Check your connection and try again.',
+      'deadline-exceeded' => 'Account deletion is taking longer than expected. Please check again shortly.',
+      'resource-exhausted' =>
+        'Too many attempts. Please wait a little before trying again.',
+      _ => 'Your account could not be deleted. Please try again later.',
+    };
+  }
   if (error is! FirebaseAuthException) {
     return 'Something went wrong. Please try again.';
   }

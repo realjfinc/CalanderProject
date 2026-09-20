@@ -2,6 +2,18 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Account deletion happens after password confirmation. Only deletes are
+    // exempt from the write quota; create/update validation remains unchanged.
+    function recentlyAuthenticatedOwner(userId) {
+      return request.auth != null && request.auth.uid == userId
+        && request.auth.token.auth_time <= request.time.toMillis() / 1000
+        && request.time.toMillis() / 1000 - request.auth.token.auth_time < 300;
+    }
+
+    match /users/{userId}/{document=**} {
+      allow delete: if recentlyAuthenticatedOwner(userId);
+    }
+
     // Each changed document must be named in the same atomic quota update.
     // Server time controls the one-hour window; clients cannot reset it early.
     function validWriteQuota(userId) {
@@ -41,10 +53,11 @@ service cloud.firestore {
     match /clientWriteLimits/{userId} {
       allow get: if request.auth != null && request.auth.uid == userId;
       allow create, update: if validWriteQuota(userId);
-      allow delete: if false;
+      allow delete: if recentlyAuthenticatedOwner(userId);
     }
 
     match /users/{userId} {
+      allow delete: if recentlyAuthenticatedOwner(userId);
       // Existing tag and initialization access stays scoped to the owner.
       match /tags/{tagId} {
         allow read: if request.auth != null && request.auth.uid == userId;
@@ -119,7 +132,7 @@ service cloud.firestore {
             && event.keys().hasOnly(['title', 'location', 'notes', 'startAt',
               'endAt', 'allDay', 'flexible', 'tagId', 'createdAt', 'updatedAt',
               'start', 'end', 'source', 'sourceId', 'status', 'tag', 'importance',
-              'attachments', 'repeat', 'reminders', 'conflictGroupId', 'conflictRole'])
+              'sportsTeamIds', 'attachments', 'repeat', 'reminders', 'conflictGroupId', 'conflictRole'])
             && event.title is string && event.title.size() > 0 && event.title.size() <= 200
             && event.location is string && event.location.size() <= 300
             && event.notes is string && event.notes.size() <= 5000
@@ -135,6 +148,8 @@ service cloud.firestore {
               && event.tag == event.tagId
               && event.flexible == (event.importance == 'flexible')
               && (event.sourceId == null || event.sourceId is string)
+              && (!('sportsTeamIds' in event) || event.sportsTeamIds == null
+                || validStringList(event.sportsTeamIds, 5, 128))
               && (event.attachments == null || validStringList(event.attachments, 5, 2000))
               && (event.repeat == null || event.repeat is map)
               && (event.reminders == null || (

@@ -26,7 +26,7 @@ class SportsApiException implements Exception {
 /// the one external integration in this project that needs no account
 /// setup or credential of any kind to actually run.
 class TheSportsDbClient {
-  TheSportsDbClient({this.apiKey = '3', http.Client? httpClient}) : _httpClient = httpClient ?? http.Client();
+  TheSportsDbClient({this.apiKey = '123', http.Client? httpClient}) : _httpClient = httpClient ?? http.Client();
 
   final String apiKey;
   final http.Client _httpClient;

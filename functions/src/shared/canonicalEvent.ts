@@ -30,6 +30,8 @@ export interface CanonicalEventData {
   end: string;
   source: EventSource;
   sourceId: string | null;
+  /** Followed team ids represented by a sports event. */
+  sportsTeamIds: string[] | null;
   status: EventStatus;
   /** Only direct user action or Step 5's routing logic may ever set this. */
   tag: string | null;
@@ -55,6 +57,7 @@ export function newSourceEvent(
 ): CanonicalEventData {
   return {
     ...fields,
+    sportsTeamIds: null,
     status: "active",
     tag: null,
     importance: "flexible",

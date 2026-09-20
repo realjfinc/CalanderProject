@@ -41,6 +41,7 @@ class CalendarEvent {
     this.source = EventSource.manual,
     this.allDay = false,
     this.sourceId,
+    this.sportsTeamIds,
     this.status = EventStatus.active,
     this.tag,
     this.importance = EventImportance.flexible,
@@ -77,6 +78,10 @@ class CalendarEvent {
       localEnd.isAfter(dateOnly(day));
 
   final String? sourceId;
+
+  /// Sports API team ids whose schedules contributed this event. A game can
+  /// belong to more than one followed team when they play each other.
+  final List<String>? sportsTeamIds;
   final EventStatus status;
   final String? tag;
   final EventImportance importance;
@@ -116,6 +121,7 @@ class CalendarEvent {
         orElse: () => EventSource.manual,
       ),
       sourceId: map['sourceId'] as String?,
+      sportsTeamIds: (map['sportsTeamIds'] as List?)?.cast<String>(),
       status: (map['status'] as String?) == 'pendingConflict'
           ? EventStatus.pendingConflict
           : EventStatus.active,
@@ -150,6 +156,7 @@ class CalendarEvent {
       'end': Timestamp.fromDate(end.toUtc()),
       'source': source.name,
       'sourceId': sourceId,
+      'sportsTeamIds': sportsTeamIds,
       'status': status == EventStatus.pendingConflict
           ? 'pendingConflict'
           : 'active',
@@ -175,6 +182,7 @@ class CalendarEvent {
     EventSource? source,
     bool? allDay,
     Object? sourceId = _unset,
+    Object? sportsTeamIds = _unset,
     EventStatus? status,
     Object? tag = _unset,
     EventImportance? importance,
@@ -198,6 +206,9 @@ class CalendarEvent {
       sourceId: identical(sourceId, _unset)
           ? this.sourceId
           : sourceId as String?,
+      sportsTeamIds: identical(sportsTeamIds, _unset)
+          ? this.sportsTeamIds
+          : sportsTeamIds as List<String>?,
       status: status ?? this.status,
       tag: identical(tag, _unset) ? this.tag : tag as String?,
       importance: importance ?? this.importance,

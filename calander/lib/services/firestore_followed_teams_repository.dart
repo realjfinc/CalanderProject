@@ -46,9 +46,54 @@ class FirestoreFollowedTeamsRepository implements FollowedTeamsRepository {
 
   @override
   Future<void> unfollowTeam(String teamId) {
-    final ref = _teamsRef.doc(teamId);
-    return _limiter.commit([
-      ref.path,
-    ], (transaction) => transaction.delete(ref));
+    return _unfollowAndRemoveGames(teamId);
+  }
+
+  Future<void> _unfollowAndRemoveGames(String teamId) async {
+    final teamRef = _teamsRef.doc(teamId);
+    final team = await teamRef.get();
+    final teamName = team.data()?['name'] as String?;
+    final events = _firestore.collection('users').doc(_uid).collection('events');
+
+    // Keep fetching until every matching game is handled. Each transaction
+    // stays within the 20-document client write limit.
+    while (true) {
+      final snapshot = await events.where('source', isEqualTo: 'sports').get();
+      final matching = snapshot.docs.where((event) {
+        final data = event.data();
+        final sportsTeamIds = (data['sportsTeamIds'] as List?)?.cast<String>();
+        if (sportsTeamIds?.contains(teamId) ?? false) return true;
+
+        // Events written before sportsTeamIds existed have no durable team
+        // link. Their sports title is "Home vs Away", so this safely clears
+        // those legacy records for the team being unfollowed as well.
+        final title = data['title'] as String? ?? '';
+        return sportsTeamIds == null &&
+            teamName != null &&
+            teamName.trim().isNotEmpty &&
+            title.toLowerCase().contains(teamName.toLowerCase());
+      }).take(19).toList();
+
+      if (matching.isEmpty) break;
+      await _limiter.commit(
+        matching.map((event) => event.reference.path).toList(),
+        (transaction) {
+          for (final event in matching) {
+            final sportsTeamIds =
+                (event.data()['sportsTeamIds'] as List?)?.cast<String>();
+            final remainingTeamIds = sportsTeamIds
+                ?.where((id) => id != teamId)
+                .toList();
+            if (remainingTeamIds != null && remainingTeamIds.isNotEmpty) {
+              transaction.update(event.reference, {'sportsTeamIds': remainingTeamIds});
+            } else {
+              transaction.delete(event.reference);
+            }
+          }
+        },
+      );
+    }
+
+    await _limiter.commit([teamRef.path], (transaction) => transaction.delete(teamRef));
   }
 }
