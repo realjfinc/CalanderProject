@@ -1,0 +1,17 @@
+# Copy this file to android/key.properties (already gitignored -- never
+# commit the real one) and fill in the values for your own upload keystore.
+#
+# Create that keystore once, if you don't have one yet:
+#   keytool -genkey -v -keystore ~/calander-upload-key.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# keytool will ask you to choose storePassword/keyPassword yourself --
+# store them (and the .jks file itself) somewhere safe outside this repo.
+# Losing this keystore means you can never publish an update to the same
+# Play Store listing again; there's no recovery.
+# Full guide: https://flutter.dev/to/reference-keystore
+
+storePassword=REPLACE_ME
+keyPassword=REPLACE_ME
+keyAlias=upload
+storeFile=/absolute/path/to/calander-upload-key.jks

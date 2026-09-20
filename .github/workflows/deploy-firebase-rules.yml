@@ -1,8 +1,13 @@
-name: Deploy Firestore rules
+name: Deploy Firebase rules
 
-# Deploys firestore.rules to the live calander-1025b project whenever it
-# changes on main -- see DEPLOYMENT.md for one-time setup (the
-# FIREBASE_RULES_DEPLOY_SERVICE_ACCOUNT secret this needs).
+# Deploys firestore.rules and storage.rules to the live calander-1025b
+# project whenever either changes on main -- see DEPLOYMENT.md for
+# one-time setup (the FIREBASE_RULES_DEPLOY_SERVICE_ACCOUNT secret this
+# needs). Both files are deployed by the same "Firebase Rules Admin"
+# IAM role and the same service account -- that role only ever lets its
+# holder change security rules, for either product, never read or write
+# actual data, so there's no reason to split it into two credentials the
+# way rules-deploy is split from data-access below.
 #
 # Deliberately never triggers on pull_request: a PR's code (including a
 # stranger's, on a public repo) must never run with access to a secret
@@ -15,6 +20,7 @@ on:
     branches: [main]
     paths:
       - "firestore.rules"
+      - "storage.rules"
   workflow_dispatch: {}
 
 permissions:
@@ -39,10 +45,10 @@ jobs:
         env:
           SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_RULES_DEPLOY_SERVICE_ACCOUNT }}
 
-      - name: Deploy Firestore rules
+      - name: Deploy Firestore and Storage rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-rules-deploy-key.json
-        run: firebase deploy --only firestore:rules --project calander-1025b --non-interactive
+        run: firebase deploy --only firestore:rules,storage --project calander-1025b --non-interactive
 
       - name: Remove deploy credentials
         if: always()

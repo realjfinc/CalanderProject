@@ -249,29 +249,6 @@ class _SignedOutFlowState extends State<SignedOutFlow> {
                 ),
               ),
             ),
-            if (_page == AuthPage.login) ...[
-              const SizedBox(height: 24),
-              const Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Flexible(
-                    flex: 3,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 60),
-                      child: Text(
-                        'or continue with',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _socialButton('Google'),
-              const SizedBox(height: 12),
-              _socialButton('Apple'),
-            ],
             const SizedBox(height: 12),
             TextButton(
               onPressed: _busy
@@ -295,18 +272,6 @@ class _SignedOutFlowState extends State<SignedOutFlow> {
     );
   }
 
-  Widget _socialButton(String provider) => OutlinedButton(
-    onPressed: _busy
-        ? null
-        : () => ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '$provider sign-in isn’t available yet. Please use email and password.',
-              ),
-            ),
-          ),
-    child: Text('Continue with $provider'),
-  );
 }
 
 class _WelcomePreview extends StatelessWidget {
