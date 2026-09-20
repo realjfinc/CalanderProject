@@ -3,7 +3,7 @@
     "short_name": "Calander",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#F7F9FC",
+    "background_color": "#285BE0",
     "theme_color": "#285BE0",
     "description": "Calander — a little more room for life.",
     "orientation": "portrait-primary",

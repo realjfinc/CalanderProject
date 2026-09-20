@@ -130,20 +130,18 @@ void main() {
       }
     }
   });
-  testWidgets('Welcome uses Calander and social buttons remain visual only', (
+  testWidgets('Welcome uses Calander, with no non-functional social sign-in buttons', (
     tester,
   ) async {
     final auth = TestAuth();
     await mount(tester, auth);
     expect(find.text('Calander'), findsOneWidget);
     await tapText(tester, 'I already have an account');
-    await tapText(tester, 'Continue with Google');
-    expect(
-      find.text(
-        'Google sign-in isn’t available yet. Please use email and password.',
-      ),
-      findsOneWidget,
-    );
+    // Google/Apple sign-in aren't wired to anything real yet -- shipping a
+    // button that just says "isn't available yet" reads as broken, so
+    // there's nothing to tap until they're actually implemented.
+    expect(find.text('Continue with Google'), findsNothing);
+    expect(find.text('Continue with Apple'), findsNothing);
     expect(auth.account, isNull);
   });
 
