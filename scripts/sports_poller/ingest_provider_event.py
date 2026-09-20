@@ -53,6 +53,11 @@ def ingest_provider_event(
     )
 
     if existing_by_source_id is not None:
+        sports_team_ids = (
+            list(dict.fromkeys((existing_by_source_id.sports_team_ids or []) + (incoming.sports_team_ids or [])))
+            if incoming.source == "sports"
+            else incoming.sports_team_ids
+        )
         updated = _as_event(
             incoming,
             existing_by_source_id.id,
@@ -62,6 +67,7 @@ def ingest_provider_event(
             status=existing_by_source_id.status,
             conflict_group_id=existing_by_source_id.conflict_group_id,
             conflict_role=existing_by_source_id.conflict_role,
+            sports_team_ids=sports_team_ids,
         )
         repository.update_event(updated)
         return updated

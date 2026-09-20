@@ -22,6 +22,7 @@ class TestAuth extends AuthService {
   int refreshes = 0;
   int resends = 0;
   int accountDeletions = 0;
+  String? deletionPassword;
   bool verifyOnRefresh = false;
   Completer<void>? loginPending;
   @override
@@ -74,7 +75,8 @@ class TestAuth extends AuthService {
   }
 
   @override
-  Future<void> deleteAccount() async {
+  Future<void> deleteAccount({required String password}) async {
+    deletionPassword = password;
     accountDeletions++;
     user = null;
     notifyListeners();
@@ -302,9 +304,13 @@ void main() {
       expect(find.text('Export Calendar'), findsOneWidget);
 
       await tapText(tester, 'Delete Account');
+      expect(tester.widget<TextButton>(find.widgetWithText(TextButton, 'Delete')).onPressed, isNull);
+      await tester.enterText(find.byKey(const ValueKey('delete-account-password')), 'test-password');
+      await tester.pump();
       await tapText(tester, 'Delete');
       await tester.pumpAndSettle();
       expect(auth.accountDeletions, 1);
+      expect(auth.deletionPassword, 'test-password');
       expect(find.text('Welcome To Calander'), findsOneWidget);
     },
   );

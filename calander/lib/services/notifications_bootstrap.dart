@@ -28,7 +28,7 @@ class NotificationsBootstrap {
 
   void onAuthChanged() {
     final account = auth.account;
-    final uid = account != null && account.verified ? account.uid : null;
+    final uid = !auth.deletingAccount && account != null && account.verified ? account.uid : null;
     if (uid == _activeUid) return;
     _stopAll();
     _activeUid = uid;

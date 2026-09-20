@@ -39,6 +39,9 @@ export async function ingestProviderEvent({
   );
 
   if (existingBySourceId) {
+    const sportsTeamIds = incoming.source === "sports"
+      ? [...new Set([...(existingBySourceId.sportsTeamIds ?? []), ...(incoming.sportsTeamIds ?? [])])]
+      : incoming.sportsTeamIds;
     const updated: CanonicalEvent = {
       ...incoming,
       id: existingBySourceId.id,
@@ -48,6 +51,7 @@ export async function ingestProviderEvent({
       status: existingBySourceId.status,
       conflictGroupId: existingBySourceId.conflictGroupId,
       conflictRole: existingBySourceId.conflictRole,
+      sportsTeamIds,
     };
     await repository.updateEvent(updated);
     return updated;

@@ -1029,34 +1029,59 @@ class _CalendarSettingsState extends State<_CalendarSettings> {
   }
 
   Future<void> _confirmDeleteAccount() async {
-    final confirmed = await showDialog<bool>(
+    if (_busy) return;
+    var password = '';
+    final confirmedPassword = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-          'This permanently deletes your account, calendar, tags, followed '
-          'teams, and uploaded attachments. This can’t be undone.',
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, updateDialog) => AlertDialog(
+          title: const Text('Delete account?'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Your calendar, tags, settings, followed teams, and login will be '
+                  'permanently deleted. You will then be signed out. This can’t be undone. '
+                  'Enter your password to confirm.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  key: const ValueKey('delete-account-password'),
+                  obscureText: true,
+                  enableSuggestions: false,
+                  autocorrect: false,
+                  decoration: const InputDecoration(
+                    labelText: 'Current password',
+                  ),
+                  onChanged: (value) => updateDialog(() => password = value),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: password.isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, password),
+              child: const Text('Delete'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete'),
-          ),
-        ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmedPassword == null || !mounted) return;
 
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      await widget.auth.deleteAccount();
+      await widget.auth.deleteAccount(password: confirmedPassword);
     } catch (error) {
       if (mounted) setState(() => _error = authErrorMessage(error));
     } finally {

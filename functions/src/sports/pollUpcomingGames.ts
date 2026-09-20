@@ -50,7 +50,7 @@ export async function pollUpcomingGames(deps: PollUpcomingGamesDeps): Promise<Po
 
         const ingested = await ingestProviderEvent({
           repository,
-          incoming: mapped,
+          incoming: { ...mapped, sportsTeamIds: [teamId] },
           currentEvents,
         });
         result.eventsIngested += 1;

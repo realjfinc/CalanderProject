@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Protocol
+from google.cloud.firestore import transactional
 
 from canonical_event import CanonicalEvent, CanonicalEventData
 
@@ -38,6 +39,7 @@ def _to_firestore_data(event: CanonicalEventData) -> dict:
         "end": parse_iso(event.end),
         "source": event.source,
         "sourceId": event.source_id,
+        "sportsTeamIds": event.sports_team_ids,
         "status": event.status,
         "tag": event.tag,
         "importance": event.importance,
@@ -67,6 +69,7 @@ def _from_firestore_doc(doc_id: str, data: dict) -> CanonicalEvent:
         end=end.isoformat() if hasattr(end, "isoformat") else end,
         source=data.get("source") or "manual",
         source_id=data.get("sourceId"),
+        sports_team_ids=data.get("sportsTeamIds"),
         status="pendingConflict" if data.get("status") == "pendingConflict" else "active",
         tag=data.get("tag"),
         importance="locked" if data.get("importance") == "locked" else "flexible",
@@ -82,15 +85,41 @@ def _from_firestore_doc(doc_id: str, data: dict) -> CanonicalEvent:
 class FirestoreEventRepository:
     """Firestore-backed `EventRepository`, scoped to `users/{uid}/events`."""
 
-    def __init__(self, firestore_client, uid: str):
+    def __init__(self, firestore_client, uid: str, *, require_followed_team: bool = False):
+        self._db = firestore_client
+        self._require_followed_team = require_followed_team
+        self._followed_teams = firestore_client.collection('users').document(uid).collection('followedTeams')
         self._events_ref = firestore_client.collection("users").document(uid).collection("events")
 
     def list_events(self) -> list[CanonicalEvent]:
         return [_from_firestore_doc(doc.id, doc.to_dict()) for doc in self._events_ref.stream()]
 
     def add_event(self, event: CanonicalEventData) -> str:
-        _, doc_ref = self._events_ref.add(_to_firestore_data(event))
+        doc_ref = self._events_ref.document()
+        self._write(doc_ref, _to_firestore_data(event), update=False)
         return doc_ref.id
 
     def update_event(self, event: CanonicalEvent) -> None:
-        self._events_ref.document(event.id).update(_to_firestore_data(event))
+        self._write(self._events_ref.document(event.id), _to_firestore_data(event), update=True)
+
+    def _write(self, ref, data, *, update):
+        if not self._require_followed_team:
+            if update:
+                ref.update(data)
+            else:
+                ref.set(data)
+            return
+
+        @transactional
+        def write_if_still_following(transaction):
+            # Account deletion removes followedTeams first. Query inside the
+            # write transaction so a poll already in progress cannot recreate
+            # events after the final followed team has been deleted.
+            if not self._followed_teams.limit(1).get(transaction=transaction):
+                return
+            if update:
+                transaction.update(ref, data)
+            else:
+                transaction.set(ref, data)
+
+        write_if_still_following(self._db.transaction())

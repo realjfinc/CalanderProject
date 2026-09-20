@@ -24,7 +24,7 @@ import logging
 import os
 import random
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Optional
 
 import firebase_admin
@@ -104,7 +104,7 @@ def poll_upcoming_games(
 
                 ingested = ingest_provider_event(
                     repository=repository,
-                    incoming=mapped,
+                    incoming=replace(mapped, sports_team_ids=[team_id]),
                     current_events=current_events,
                 )
                 result.events_ingested += 1
@@ -199,7 +199,7 @@ def run(credentials_path: Optional[str] = None) -> tuple[PollResult, CacheResult
         fetch_upcoming_events_raw_fn=lambda team_id: fetch_upcoming_events_raw(
             team_id, session=http_session
         ),
-        make_event_repository=lambda uid: FirestoreEventRepository(db, uid),
+        make_event_repository=lambda uid: FirestoreEventRepository(db, uid, require_followed_team=True),
     )
 
     logger.info(

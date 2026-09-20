@@ -38,6 +38,12 @@ Future<CalendarEvent> ingestProviderEvent({
   }
 
   if (existingBySourceId != null) {
+    final sportsTeamIds = incoming.source == EventSource.sports
+        ? {
+            ...?existingBySourceId.sportsTeamIds,
+            ...?incoming.sportsTeamIds,
+          }.toList()
+        : incoming.sportsTeamIds;
     final updated = incoming.copyWith(
       id: existingBySourceId.id,
       // Never overwrite tag or an existing conflict with the provider's
@@ -46,6 +52,7 @@ Future<CalendarEvent> ingestProviderEvent({
       status: existingBySourceId.status,
       conflictGroupId: existingBySourceId.conflictGroupId,
       conflictRole: existingBySourceId.conflictRole,
+      sportsTeamIds: sportsTeamIds,
     );
     await repository.updateEvent(updated);
     return updated;

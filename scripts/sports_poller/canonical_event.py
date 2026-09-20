@@ -24,6 +24,7 @@ class CanonicalEventData:
     end: str
     source: str
     source_id: Optional[str]
+    sports_team_ids: Optional[list[str]]
     status: str
     # Only direct user action or Step 5's routing logic may ever set this.
     tag: Optional[str]
@@ -50,6 +51,7 @@ def new_source_event(
     source: str,
     source_id: Optional[str],
     notes: Optional[str],
+    sports_team_ids: Optional[list[str]] = None,
 ) -> CanonicalEventData:
     """Defaults for fields a source adapter (this poller included) never sets."""
     return CanonicalEventData(
@@ -59,6 +61,7 @@ def new_source_event(
         end=end,
         source=source,
         source_id=source_id,
+        sports_team_ids=sports_team_ids,
         status="active",
         tag=None,
         importance="flexible",

@@ -33,11 +33,47 @@ class FirestoreWriteLimiter {
   }) : _now = now ?? DateTime.now;
 
   static const hourlyLimit = 100;
+  static final Set<String> _deletingUsers = {};
+  static final Map<String, Set<Future<void>>> _pendingWrites = {};
+
+  static Future<void> pauseForAccountDeletion(String uid) async {
+    _deletingUsers.add(uid);
+    final pending = _pendingWrites[uid]?.toList() ?? <Future<void>>[];
+    await Future.wait(pending.map((write) async {
+      try {
+        await write;
+      } catch (_) {
+        // A rejected background write must not prevent account deletion.
+      }
+    }));
+  }
+
+  static void resumeAfterFailedDeletion(String uid) {
+    _deletingUsers.remove(uid);
+  }
   final FirebaseFirestore firestore;
   final String uid;
   final DateTime Function() _now;
 
   Future<void> commit(
+    List<String> paths,
+    void Function(Transaction) write,
+  ) async {
+    if (_deletingUsers.contains(uid)) {
+      throw StateError('This account is being deleted.');
+    }
+    final pending = _commit(paths, write);
+    final writes = _pendingWrites.putIfAbsent(uid, () => {});
+    writes.add(pending);
+    try {
+      await pending;
+    } finally {
+      writes.remove(pending);
+      if (writes.isEmpty) _pendingWrites.remove(uid);
+    }
+  }
+
+  Future<void> _commit(
     List<String> paths,
     void Function(Transaction) write,
   ) async {
@@ -58,6 +94,9 @@ class FirestoreWriteLimiter {
     final quota = firestore.collection('clientWriteLimits').doc(uid);
     await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(quota);
+      if (_deletingUsers.contains(uid)) {
+        throw StateError('This account is being deleted.');
+      }
       final data = snapshot.data();
       final startedAt = (data?['windowStart'] as Timestamp?)?.toDate();
       final expired =
