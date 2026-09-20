@@ -1,5 +1,7 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 
@@ -27,6 +29,17 @@ Future<void> main() async {
   try {
     await Firebase.initializeApp(
       options: FirebaseConfiguration.currentPlatform,
+    );
+    // Silences "No AppCheckProvider installed" (harmless on its own, but
+    // required the moment App Check enforcement is ever turned on for
+    // Firestore/Storage/Functions in the Firebase console). The debug
+    // provider's token only has to be registered with the project if/when
+    // that happens -- it logs itself to the console on first run.
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidPlayIntegrityProvider(),
+      providerApple: kDebugMode
+          ? const AppleDebugProvider()
+          : const AppleAppAttestWithDeviceCheckFallbackProvider(),
     );
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
